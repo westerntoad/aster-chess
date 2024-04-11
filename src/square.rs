@@ -13,13 +13,69 @@
 //!     a  b  c  d  e  f  g  h
 
 use std::fmt;
+use super::bitboard::Bitboard;
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Square(u8);
 
 #[allow(dead_code)]
 impl Square {
-    // Constants
+    pub fn new(val: u8) -> Result<Self, &'static str> {
+        match val {
+            0..=63 => Ok(Self(val)),
+            _ => Err("Invalid square index."),
+        }
+    }
+
+    pub fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
+        Self::new(rank * 8 + file)
+    }
+
+    pub fn bb(&self) -> Bitboard {
+        Bitboard::new(u64::pow(2, self.0 as u32))
+    }
+
+    pub fn val(&self) -> u8 {
+        self.0
+    }
+    
+    pub fn rank(&self) -> u8 {
+        self.0 / 8
+    }
+    
+    pub fn file(&self) -> u8 {
+        self.0 % 8
+    }
+}
+
+impl fmt::Debug for Square {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+        // old implementation:
+        //write!(f, "{:06b}", self.0)
+    }
+}
+
+impl fmt::Display for Square {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let file = match self.file() {
+            0 => 'a',
+            1 => 'b',
+            2 => 'c',
+            3 => 'd',
+            4 => 'e',
+            5 => 'f',
+            6 => 'g',
+            7 => 'h',
+            _ => panic!()
+        };
+
+        write!(f, "{}{}", file, 8 - self.rank())
+    }
+}
+
+// CONSTANTS
+impl Square {
     pub const A8: Square = Self(0);
     pub const B8: Square = Self(1);
     pub const C8: Square = Self(2);
@@ -91,58 +147,10 @@ impl Square {
     pub const F1: Square = Self(61);
     pub const G1: Square = Self(62);
     pub const H1: Square = Self(63);
-    
-    pub fn new(val: u8) -> Result<Self, &'static str> {
-        match val {
-            0..=63 => Ok(Self(val)),
-            _ => Err("Invalid square index."),
-        }
-    }
-
-    pub fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
-        Self::new(file + rank * 8)
-    }
-
-    pub fn val(&self) -> u8 {
-        self.0
-    }
-    
-    pub fn rank(&self) -> u8 {
-        self.0 / 8
-    }
-    
-    pub fn file(&self) -> u8 {
-        self.0 % 8
-    }
-}
-
-impl fmt::Debug for Square {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-        //write!(f, "{:06b}", self.0)
-    }
-}
-
-impl fmt::Display for Square {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let file = match self.file() {
-            0 => 'a',
-            1 => 'b',
-            2 => 'c',
-            3 => 'd',
-            4 => 'e',
-            5 => 'f',
-            6 => 'g',
-            7 => 'h',
-            _ => panic!()
-        };
-
-        write!(f, "{}{}", file, 8 - self.rank())
-    }
 }
 
 
-// TESTS
+
 #[cfg(test)]
 mod tests {
     use super::*;
