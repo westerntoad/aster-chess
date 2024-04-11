@@ -22,8 +22,8 @@ pub enum Flag {
 impl Move {
     pub fn new(orig: Square, targ: Square, flag: Flag) -> Self {
         let mut output = (orig.val() as u16) << 10;
-        output +=        (targ.val() as u16) << 4;
-        output +=        flag        as u16;
+        output        += (targ.val() as u16) << 4;
+        output        += flag        as u16;
 
         Self(output)
     }
@@ -38,8 +38,9 @@ impl fmt::Debug for Move {
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Move({} to {}, {:04b})",
-            Square::from((self.0 >> 10) as u8),
-            Square::from((self.0 >> 4) as u8), self.0 % 0b10000
+            Square::new((self.0 >> 10) as u8).unwrap_or(Square::A1),
+            Square::new((self.0 >> 4 ) as u8).unwrap_or(Square::A1),
+            self.0 % 0b10000
         )
     }
 }
