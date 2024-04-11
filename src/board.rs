@@ -3,8 +3,6 @@ use super::movement::Move;
 use super::square::Square;
 use std::fmt;
 
-
-
 pub struct Board {
     color_bb: [Bitboard; 2],
     piece_bb: [Bitboard; 6],
@@ -18,7 +16,6 @@ pub struct Board {
 }
 
 impl Board {
-    // Constants
     pub const STARTING_POSITION: Board = Board {
         color_bb: [
             Bitboard::STARTING_WHITE,
@@ -42,15 +39,15 @@ impl Board {
     };
 
     pub fn from_fen(fen: &str) -> Result<Self, &'static str> {
-        let color_bb = [Bitboard::EMPTY; 2];
-        let piece_bb = [Bitboard::EMPTY; 6];
-        let white_to_move: bool;
-        let can_castle_wk: bool;
-        let can_castle_wq: bool;
-        let can_castle_bk: bool;
-        let can_castle_bq: bool;
-        let en_passant_target: Option<Square>;
-        let half_move_clock: u8;
+        let mut color_bb = [Bitboard::EMPTY; 2];
+        let mut piece_bb = [Bitboard::EMPTY; 6];
+        let mut white_to_move: bool = false;
+        let mut can_castle_wk: bool = false;
+        let mut can_castle_wq: bool = false;
+        let mut can_castle_bk: bool = false;
+        let mut can_castle_bq: bool = false;
+        let mut en_passant_target: Option<Square> = None;
+        let mut half_move_clock: u8 = 0;
 
         let fen_components: Vec<&str> = fen.split_whitespace().collect();
         if fen_components.len() != 6 {
@@ -59,27 +56,85 @@ impl Board {
 
         for (i, row) in fen_components.get(0).unwrap().split('/').enumerate() {
             let mut j = 0;
-            for elem in row.chars() {
-                let bb = Square::from_coord(j as u8, i as u8).unwrap();
-                //println!("{}\n{:?}", bb, Bitboard::from_sq(bb));
+            for mut elem in row.chars() {
+                let sq = Square::from_coord(7 - (i as u8), j as u8).unwrap();     // FIX BAD UNWRAP
+                let bb = sq.bb();
                 match elem {
                     '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {
                         j += elem as u8 - 48;
                         continue;
                     },
                     _ => {
-                        //println!("{} = {}", elem, elem as u8);
+
+                        let color_idx = elem.is_lowercase() as usize;
+                        elem.make_ascii_lowercase();
+                        let piece_idx = match elem {
+                            'p' => 0,
+                            'n' => 1,
+                            'b' => 2,
+                            'r' => 3,
+                            'q' => 4,
+                            'k' => 5,
+                             _  => return Err("Invalid piece character.")
+                        };
+
+                        color_bb[color_idx] |= sq.bb();
+                        piece_bb[piece_idx] |= sq.bb();
+
                         j += 1;
                     },
                 }
             }
         }
 
-        //println!("{:?}", fen_components);
+        white_to_move = match fen_components.get(1).unwrap().chars().next().unwrap() {
+            'w' => true,
+            'b' => false,
+             _  => return Err("Invalid side to move."),
+        };
+
+        for character in fen_components.get(2).unwrap().chars() {
+            match character {
+                'K' => can_castle_wk = true,
+                'Q' => can_castle_wq = true,
+                'k' => can_castle_wq = true,
+                'q' => can_castle_wq = true,
+                '-' => continue,
+                 _  => return Err("Invalid castling validity."),
+
+            };
+        }
+
+        let target = *fen_components.get(3).unwrap();
+        en_passant_target = match target {
+            "-" => None,
+             _  => match Square::from_algebraic(target) {
+                Ok(v) => Some(v),
+                Err(_) => return Err("Invalid en passant target."),
+             },
+        };
+
+        half_move_clock = match fen_components.get(4).unwrap().parse::<u8>() {
+            Ok(v) => v,
+            Err(_)    => return Err("Invalid half move."),
+        };
 
 
 
-        Ok(Self::STARTING_POSITION)
+
+        println!("{:?}", fen_components);
+
+        Ok(Board {
+            color_bb,
+            piece_bb,
+            white_to_move,
+            can_castle_wk,
+            can_castle_wq,
+            can_castle_bk,
+            can_castle_bq,
+            en_passant_target,
+            half_move_clock,
+        })
     }
 
     pub fn legal_moves(&self) -> Vec<Move> {
@@ -87,7 +142,7 @@ impl Board {
 
         let color_bb = self.color_bb[(!self.white_to_move) as usize]; 
 
-        // Knights
+        todo!();
 
         moves
     }
@@ -98,6 +153,12 @@ impl Board {
 
     pub fn pieces(&self) -> [Bitboard; 6] {
         self.piece_bb
+    }
+}
+
+impl PartialEq for Board {
+    fn eq(&self, other: &Self) -> bool {
+        self.color_bb == other.color_bb && self.piece_bb == other.piece_bb
     }
 }
 
@@ -139,5 +200,60 @@ impl fmt::Debug for Board {
         }
 
         write!(f, "{}", output)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fen_starting() {
+        let output: Board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+
+        assert_eq!(output, Board::STARTING_POSITION);
+    }
+
+    #[test]
+    fn test_fen_opening() {
+        let output: Board = Board::from_fen("").unwrap();
+
+        todo!();
+    }
+
+    #[test]
+    fn test_fen_middlegame() {
+        let output: Board = Board::from_fen("").unwrap();
+
+        todo!();
+    }
+
+    #[test]
+    fn test_fen_endgame() {
+        let output: Board = Board::from_fen("8/5k2/1p1p2p1/3Pnb1p/2P2b1P/5P2/3qBP2/4NKRQ w - - 3 39").unwrap();
+        
+        todo!();
+        
+        /*let expected_output: Board = Board {
+            color_bb: [
+                Bitboard::new(),
+                Bitboard::new(),
+            ],
+            piece_bb: [
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+                Bitboard::new(),
+            ],
+            white_to_move: true,
+            can_castle_wk: true,
+            can_castle_wq: true,
+            can_castle_bk: true,
+            can_castle_bq: true,
+            en_passant_target: None,
+            half_move_clock: 0,
+        };*/
     }
 }

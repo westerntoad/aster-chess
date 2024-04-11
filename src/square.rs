@@ -31,6 +31,19 @@ impl Square {
         Self::new(rank * 8 + file)
     }
 
+    pub fn from_algebraic(val: &str) -> Result<Self, &'static str> {
+        let file = match val.chars().nth(0) {
+            Some(v) => (v as u8) - 0x61,
+            None => return Err("Invalid file parameter"),
+        };
+        let rank = match val.chars().nth(1) {
+            Some(v) => 8 - ((v as u8) - 0x30),
+            None => return Err("Invalid rank parameter"),
+        };
+
+        Self::from_coord(rank, file)
+    }
+
     pub fn bb(&self) -> Bitboard {
         Bitboard::new(u64::pow(2, self.0 as u32))
     }
@@ -74,7 +87,7 @@ impl fmt::Display for Square {
     }
 }
 
-// CONSTANTS
+#[allow(dead_code)]
 impl Square {
     pub const A8: Square = Self(0);
     pub const B8: Square = Self(1);
@@ -187,6 +200,14 @@ mod tests {
         assert!(Square::new(150).is_err());
         assert!(Square::new(64).is_err());
         assert!(Square::new(u8::MAX).is_err());
+    }
+
+    #[test]
+    fn test_from_algebraic() {
+        assert_eq!(Square::from_algebraic("e4").unwrap(), Square::E4);
+        assert_eq!(Square::from_algebraic("c6").unwrap(), Square::C6);
+        assert_eq!(Square::from_algebraic("a1").unwrap(), Square::A1);
+        assert_eq!(Square::from_algebraic("h8").unwrap(), Square::H8);
     }
 
     #[test]

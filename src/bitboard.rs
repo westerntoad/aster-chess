@@ -1,7 +1,9 @@
 use std::{ 
     fmt,
     ops::BitAnd,
+    ops::BitAndAssign,
     ops::BitOr,
+    ops::BitOrAssign,
     ops::BitXor,
     ops::Not
 };
@@ -49,11 +51,23 @@ impl BitAnd for Bitboard {
     }
 }
 
+impl BitAndAssign for Bitboard {
+    fn bitand_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
+    }
+}
+
 impl BitOr for Bitboard {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Self::Output {
         Self(self.0 | rhs.0)
+    }
+}
+
+impl BitOrAssign for Bitboard {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0;
     }
 }
 
