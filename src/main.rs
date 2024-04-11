@@ -1,6 +1,9 @@
 mod square;
 mod bitboard;
+mod movement;
+
+use bitboard::*;
 
 fn main() {
-    println!("Hello, world!");
+    println!("Bitboard: {:?}", Bitboard::A_FILE);
 }
