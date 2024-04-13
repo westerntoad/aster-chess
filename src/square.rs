@@ -63,9 +63,7 @@ impl Square {
 
 impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-        // old implementation:
-        //write!(f, "{:06b}", self.0)
+        write!(f, "{:#06b}", self.0)
     }
 }
 
