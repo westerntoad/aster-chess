@@ -104,10 +104,10 @@ impl fmt::Debug for Bitboard {
             }
         }
 
+        output.push_str(&format!("\nHex:\n{:#016x}", self.0));
         write!(f, "{}", output)
     }
 }
-
 //impl fmt::Debug for Bitboard {
 //    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 //        let mut output = String::new();
