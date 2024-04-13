@@ -41,6 +41,39 @@ mod tests {
     use crate::square::*;
 
     #[test]
+    fn test_n_move_gen() {
+        let output = n_move_gen(Square::E4.bb());
+        let expected_output = Bitboard::new(0x28440044280000);
+
+
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
+    fn test_n_move_gen_edge_close() {
+        let output = n_move_gen(Square::A4.bb());
+        let expected_output = Bitboard::new(0x02040004020000);
+
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
+    fn test_n_move_gen_edge_far() {
+        let output = n_move_gen(Square::G5.bb());
+        let expected_output = Bitboard::new(0x00a0100010a000);
+
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
+    fn test_n_move_gen_corner() {
+        let output = n_move_gen(Square::A1.bb());
+        let expected_output = Bitboard::new(0x04020000000000);
+
+        assert_eq!(output, expected_output);
+    }
+
+    #[test]
     fn test_k_move_gen() {
         let output = k_move_gen(Square::E2.bb());
         let expected_output = Bitboard::new(0x3828380000000000);
