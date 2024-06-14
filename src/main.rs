@@ -3,14 +3,22 @@
 
 mod bitboard;
 mod board;
+mod legal_moves;
 mod movement;
 mod square;
 
 use crate::bitboard::*;
 use crate::board::*;
+use crate::legal_moves::*;
 use crate::movement::*;
 use crate::square::*;
 
-fn main() {
-    println!("{:?}", Board::from_fen("8/5k2/1p1p2p1/3Pnb1p/2P2b1P/5P2/3qBP2/4NKRQ w - - 3 39").unwrap());
+fn main() -> std::io::Result<()> {
+
+    let bb = n_move_gen(Square::E4.bb());
+
+    println!("{:?}", bb);
+
+
+    Ok(())
 }

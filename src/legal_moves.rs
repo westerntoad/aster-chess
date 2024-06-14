@@ -1,6 +1,4 @@
-
 use crate::bitboard::Bitboard;
-
 
 pub fn pawn_move_gen(orig: Bitboard) -> Bitboard {
     todo!();
@@ -18,8 +16,15 @@ pub fn n_move_gen(orig: Bitboard) -> Bitboard {
     horizontal | vertical
 }
 
-pub fn b_move_gen(orig: Bitboard) -> Bitboard {
-    todo!();
+pub fn b_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard {
+    let mut attacks = Bitboard::EMPTY;
+    let mut no_ea_idx = orig.nort_one().east_one();
+    while no_ea_idx != Bitboard::EMPTY && no_ea_idx | friend == Bitboard::EMPTY && (no_ea_idx | enemy).pop_count() <= 1 {
+        attacks |= no_ea_idx;
+        no_ea_idx = no_ea_idx.nort_one().east_one();
+    }
+
+    return attacks;
 }
 
 pub fn r_move_gen(orig: Bitboard) -> Bitboard {
