@@ -1,7 +1,20 @@
 use super::bitboard::Bitboard;
 use super::movement::Move;
+use super::movement::Flag;
 use super::square::Square;
+use super::legal_moves::{
+    n_move_gen,
+    k_move_gen,
+    b_move_gen
+};
 use std::fmt;
+
+const PAWN_IDX: usize = 0;
+const KNIGHT_IDX: usize = 1;
+const BISHOP_IDX: usize = 2;
+const ROOK_IDX: usize = 3;
+const QUEEN_IDX: usize = 4;
+const KING_IDX: usize = 5;
 
 pub struct Board {
     color_bb: [Bitboard; 2],
@@ -50,6 +63,7 @@ impl Board {
         let mut half_move_clock: u8 = 0;
 
         let fen_components: Vec<&str> = fen.split_whitespace().collect();
+        println!("{:?}", fen_components);
         if fen_components.len() != 6 {
             return Err("Invalid FEN length.");
         }
@@ -66,7 +80,7 @@ impl Board {
                     },
                     _ => {
 
-                        let color_idx = elem.is_lowercase() as usize;
+                        let color_idx = elem.is_uppercase() as usize;
                         elem.make_ascii_lowercase();
                         let piece_idx = match elem {
                             'p' => 0,
@@ -122,8 +136,6 @@ impl Board {
 
 
 
-        println!("{:?}", fen_components);
-
         Ok(Board {
             color_bb,
             piece_bb,
@@ -140,9 +152,50 @@ impl Board {
     pub fn legal_moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(218);
 
-        let color_bb = self.color_bb[(!self.white_to_move) as usize]; 
+        let friend = self.color_bb[self.white_to_move as usize];
+        let enemy = self.color_bb[!(self.white_to_move) as usize];
 
-        todo!();
+        for knight_bb in friend & self.piece_bb[KNIGHT_IDX] {
+            for attack_bb in n_move_gen(knight_bb) & !friend {
+                moves.push(Move::new(
+                    Square::from_bb(knight_bb).unwrap(),
+                    Square::from_bb(attack_bb).unwrap(),
+                    if (attack_bb & enemy).is_empty() {
+                        Flag::Quiet
+                    } else {
+                        Flag::Capture
+                    }
+                ));
+            }
+        }
+
+        for king_bb in friend & self.piece_bb[KING_IDX] {
+            for attack_bb in k_move_gen(king_bb) & !friend {
+                moves.push(Move::new(
+                    Square::from_bb(king_bb).unwrap(),
+                    Square::from_bb(attack_bb).unwrap(),
+                    if (attack_bb & enemy).is_empty() {
+                        Flag::Quiet
+                    } else {
+                        Flag::Capture
+                    }
+                ));
+            }
+        }
+        
+        for bishop_bb in friend & self.piece_bb[BISHOP_IDX] {
+            for attack_bb in b_move_gen(bishop_bb, friend | enemy) & !friend {
+                moves.push(Move::new(
+                    Square::from_bb(bishop_bb).unwrap(),
+                    Square::from_bb(attack_bb).unwrap(),
+                    if (attack_bb & enemy).is_empty() {
+                        Flag::Quiet
+                    } else {
+                        Flag::Capture
+                    }
+                ));
+            }
+        }
 
         moves
     }
@@ -183,20 +236,25 @@ impl fmt::Debug for Board {
                     let bit = (bytes[k / 8] >> (k % 8)) % 2;
 
                     if bit != 0 {
-                        board_arr[k] = char::from_u32((9823 - j - i * 6) as u32).unwrap_or('?');
+                        board_arr[k] = char::from_u32((9817 - j + i * 6) as u32).unwrap_or('?');
                     }
                 }
             }
         }
 
         for (i, element) in board_arr.iter().enumerate() {
-            output.push(board_arr[i]);
+            output.push(*element);
             
             if i % 8 != 7 {
                 output.push(' ');
             } else {
                 output.push('\n');
             }
+        }
+
+        output.push_str("\nLegal moves: \n");
+        for (i, action) in self.legal_moves().iter().enumerate() {
+            output.push_str(&format!("{: <6}{}\n", i+1, action));
         }
 
         write!(f, "{}", output)

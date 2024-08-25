@@ -25,6 +25,10 @@ impl Bitboard {
         &self.0 == &0
     }
 
+    pub fn is_one(&self) -> bool {
+        self.0.is_power_of_two()
+    }
+
     pub fn nort_one(&self) -> Bitboard {
         Self(&self.0 >> 8)
     }
@@ -39,6 +43,31 @@ impl Bitboard {
 
     pub fn west_one(&self) -> Bitboard {
         Self(&self.0 >> 1) & !Self::H_FILE
+    }
+
+    pub const fn index(&self) -> usize {
+        self.0.trailing_zeros() as usize
+    }
+
+    pub fn rank(&self) -> u64 {
+        (&self.0.ilog2() / 8).into()
+    }
+
+    pub fn file(&self) -> u64 {
+        (self.0.ilog2() % 8).into()
+    }
+}
+
+impl Iterator for Bitboard {
+    type Item = Bitboard;
+
+    fn next(&mut self) -> Option<Self> {
+        if self.0 == 0 { return None; };
+
+        let ls1b = self.0 & (!self.0 + 1);
+        self.0 = self.0 & !ls1b;
+
+        Some(Bitboard(ls1b))
     }
 }
 
@@ -128,8 +157,8 @@ impl Bitboard {
     pub const A_FILE: Bitboard =            Bitboard(0x01_01_01_01_01_01_01_01);
     pub const H_FILE: Bitboard =            Bitboard(0x80_80_80_80_80_80_80_80);
 
-    pub const STARTING_WHITE: Bitboard =    Bitboard(0x00_00_00_00_00_00_ff_ff);
-    pub const STARTING_BLACK: Bitboard =    Bitboard(0xff_ff_00_00_00_00_00_00);
+    pub const STARTING_WHITE: Bitboard =    Bitboard(0xff_ff_00_00_00_00_00_00);
+    pub const STARTING_BLACK: Bitboard =    Bitboard(0x00_00_00_00_00_00_ff_ff);
     pub const STARTING_PAWNS: Bitboard =    Bitboard(0x00_ff_00_00_00_00_ff_00);
     pub const STARTING_KNIGHTS: Bitboard =  Bitboard(0x42_00_00_00_00_00_00_42);
     pub const STARTING_BISHOPS: Bitboard =  Bitboard(0x24_00_00_00_00_00_00_24);

@@ -15,10 +15,8 @@ use crate::square::*;
 
 fn main() -> std::io::Result<()> {
 
-    let bb = n_move_gen(Square::E4.bb());
 
-    println!("{:?}", bb);
-
+    println!("{:#?}", Board::from_fen("k7/8/3qb3/8/3N4/1pp5/8/7K w - - 0 1").unwrap());
 
     Ok(())
 }

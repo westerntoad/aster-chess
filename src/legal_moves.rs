@@ -1,10 +1,33 @@
 use crate::bitboard::Bitboard;
 
-pub fn pawn_move_gen(orig: Bitboard, enemy:Bitboard, friend: Bitboard) -> Bitboard {
-    todo!();
+pub fn p_move_gen(
+    orig: Bitboard,
+    is_white: bool,
+    friend: Bitboard,
+    enemy: Bitboard,
+    en_passant: Bitboard
+) -> Bitboard {
+    let forward = match is_white {
+        true  => orig.nort_one(),
+        false => orig.sout_one()
+    };
+
+    let blocks = friend | enemy;
+    let attacks = (forward.east_one() | forward.west_one()) & (enemy | en_passant);
+    let movement = if is_white && orig.rank() == 6 {
+        let step = forward & !blocks;
+        step | step.nort_one() & !blocks
+    } else if !is_white && orig.rank() == 1 {
+        let step = forward & !blocks;
+        step | step.sout_one() & !blocks
+    } else {
+        forward & !blocks
+    };
+
+    attacks | movement
 }
 
-pub fn n_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard {
+pub fn n_move_gen(orig: Bitboard) -> Bitboard {
     let mut horizontal = orig.east_one().east_one();
     horizontal |= orig.west_one().west_one();
     horizontal = horizontal.nort_one() | horizontal.sout_one();
@@ -13,85 +36,92 @@ pub fn n_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard
     vertical |= orig.sout_one().sout_one();
     vertical = vertical.east_one() | vertical.west_one();
 
-    (horizontal | vertical) & !enemy
+    horizontal | vertical
 }
 
-pub fn b_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard {
+pub fn k_move_gen(orig: Bitboard) -> Bitboard {
+    let attacks = orig.nort_one() | orig.sout_one();
+
+    attacks | attacks.west_one() | attacks.east_one() | orig.west_one() | orig.east_one()
+}
+
+
+pub fn b_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
     let mut attacks = Bitboard::EMPTY;
 
-    let mut no_ea_idx = orig.nort_one().east_one();
-    while !no_ea_idx.is_empty() && (no_ea_idx & friend).is_empty() {
-        attacks |= no_ea_idx;
-        if !(no_ea_idx & enemy).is_empty() {
+    let mut idx = orig.nort_one().east_one();
+    while !idx.is_empty() {
+        attacks |= idx;
+        if !(idx & blockers).is_empty() {
             break;
         }
-        no_ea_idx = no_ea_idx.nort_one().east_one();
+        idx = idx.nort_one().east_one();
     }
 
-    let mut so_ea_idx = orig.sout_one().east_one();
-    while !so_ea_idx.is_empty() && (so_ea_idx & friend).is_empty() {
-        attacks |= so_ea_idx;
-        if !(so_ea_idx & enemy).is_empty() {
+    idx = orig.sout_one().east_one();
+    while !idx.is_empty() {
+        attacks |= idx;
+        if !(idx & blockers).is_empty() {
             break;
         }
-        so_ea_idx = so_ea_idx.sout_one().east_one();
+        idx = idx.sout_one().east_one();
     }
 
-    let mut so_we_idx = orig.sout_one().west_one();
-    while !so_we_idx.is_empty() && (so_we_idx & friend).is_empty() {
-        attacks |= so_we_idx;
-        if !(so_we_idx & enemy).is_empty() {
+    idx = orig.sout_one().west_one();
+    while !idx.is_empty() {
+        attacks |= idx;
+        if !(idx & blockers).is_empty() {
             break;
         }
-        so_we_idx = so_we_idx.sout_one().west_one();
+        idx = idx.sout_one().west_one();
     }
 
-    let mut no_we_idx = orig.nort_one().west_one();
-    while !no_we_idx.is_empty() && (no_we_idx & friend).is_empty() {
-        attacks |= no_we_idx;
-        if !(no_we_idx & enemy).is_empty() {
+    idx = orig.nort_one().west_one();
+    while !idx.is_empty() {
+        attacks |= idx;
+        if !(idx & blockers).is_empty() {
             break;
         }
-        no_we_idx = no_we_idx.nort_one().west_one();
+        idx = idx.nort_one().west_one();
     }
 
     attacks
 }
 
-pub fn r_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard {
+pub fn r_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
     let mut attacks = Bitboard::EMPTY;
 
     let mut nort_idx = orig.nort_one();
-    while !nort_idx.is_empty() && (nort_idx & friend).is_empty() {
+    while !nort_idx.is_empty() {
         attacks |= nort_idx;
-        if !(nort_idx & enemy).is_empty() {
+        if !(nort_idx & blockers).is_empty() {
             break;
         }
         nort_idx = nort_idx.nort_one();
     }
     
-    let mut east_idx = orig.east_one();
-    while !east_idx.is_empty() && (east_idx & friend).is_empty() {
+    let mut east_idx = orig;
+    while !east_idx.is_empty() {
+        east_idx = east_idx.east_one();
         attacks |= east_idx;
-        if !(nort_idx & enemy).is_empty() {
+        if !(east_idx & blockers).is_empty() {
             break;
         }
-        east_idx = east_idx.east_one();
     }
 
     let mut sout_idx = orig.sout_one();
-    while !sout_idx.is_empty() && (sout_idx & friend).is_empty() {
+    while !sout_idx.is_empty() {
         attacks |= sout_idx;
-        if !(sout_idx & enemy).is_empty() {
+        if !(sout_idx & blockers).is_empty() {
             break;
         }
         sout_idx = sout_idx.sout_one();
     }
 
     let mut west_idx = orig.west_one();
-    while !west_idx.is_empty() && (west_idx & friend).is_empty() {
+    while !west_idx.is_empty() {
         attacks |= west_idx;
-        if !(west_idx & enemy).is_empty() {
+        if !(west_idx & blockers).is_empty() {
             break;
         }
         west_idx = west_idx.west_one();
@@ -100,15 +130,10 @@ pub fn r_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard
     attacks
 }
 
-pub fn q_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard {
-    b_move_gen(orig, enemy, friend) | r_move_gen(orig, enemy, friend)
+pub fn q_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
+    b_move_gen(orig, blockers) | r_move_gen(orig, blockers)
 }
 
-pub fn k_move_gen(orig: Bitboard, enemy: Bitboard, friend: Bitboard) -> Bitboard {
-    let attacks = orig.nort_one() | orig.sout_one();
-
-    (attacks | attacks.west_one() | attacks.east_one() | orig.west_one() | orig.east_one()) & !enemy
-}
 
 #[cfg(test)]
 mod tests {

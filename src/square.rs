@@ -1,14 +1,14 @@
 //! Unsigned 8-bit integer interpreted as a single square on a chess board. The
 //! elenents are indexed via a value as the following:
 //!
-//! 1   0  1  2  3  4  5  6  7
-//! 2   8  9  10 11 12 13 14 15
-//! 3   16 17 18 19 20 21 22 23
-//! 4   24 25 26 27 28 29 30 31
-//! 5   32 33 34 35 36 37 38 39
-//! 6   40 41 42 43 44 45 46 47
-//! 7   48 49 50 51 52 53 54 55
-//! 8   56 57 58 59 60 61 62 63
+//! 8   0  1  2  3  4  5  6  7
+//! 7   8  9  10 11 12 13 14 15
+//! 6   16 17 18 19 20 21 22 23
+//! 5   24 25 26 27 28 29 30 31
+//! 4   32 33 34 35 36 37 38 39
+//! 3   40 41 42 43 44 45 46 47
+//! 2   48 49 50 51 52 53 54 55
+//! 1   56 57 58 59 60 61 62 63
 //!
 //!     a  b  c  d  e  f  g  h
 
@@ -44,6 +44,14 @@ impl Square {
         Self::from_coord(rank, file)
     }
 
+    pub fn from_bb(bb: Bitboard) -> Result<Self, &'static str> {
+        if bb.is_one() {
+            Ok(Square(bb.val().leading_zeros() as u8))
+        } else {
+            Err("Bitboard is overpopulated")
+        }
+    }
+
     pub fn bb(&self) -> Bitboard {
         Bitboard::new(u64::pow(2, self.0 as u32))
     }
@@ -70,14 +78,14 @@ impl fmt::Debug for Square {
 impl fmt::Display for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let file = match self.file() {
-            0 => 'a',
-            1 => 'b',
-            2 => 'c',
-            3 => 'd',
-            4 => 'e',
-            5 => 'f',
-            6 => 'g',
-            7 => 'h',
+            7 => 'a',
+            6 => 'b',
+            5 => 'c',
+            4 => 'd',
+            3 => 'e',
+            2 => 'f',
+            1 => 'g',
+            0 => 'h',
             _ => panic!()
         };
 
