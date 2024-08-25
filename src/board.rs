@@ -5,7 +5,10 @@ use super::square::Square;
 use super::legal_moves::{
     n_move_gen,
     k_move_gen,
-    b_move_gen
+    b_move_gen,
+    r_move_gen,
+    q_move_gen,
+    p_move_gen
 };
 use std::fmt;
 
@@ -16,6 +19,7 @@ const ROOK_IDX: usize = 3;
 const QUEEN_IDX: usize = 4;
 const KING_IDX: usize = 5;
 
+#[derive(Clone)]
 pub struct Board {
     color_bb: [Bitboard; 2],
     piece_bb: [Bitboard; 6],
@@ -72,7 +76,6 @@ impl Board {
             let mut j = 0;
             for mut elem in row.chars() {
                 let sq = Square::from_coord(7 - (i as u8), j as u8).unwrap();     // FIX BAD UNWRAP
-                let bb = sq.bb();
                 match elem {
                     '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' => {
                         j += elem as u8 - 48;
@@ -80,7 +83,7 @@ impl Board {
                     },
                     _ => {
 
-                        let color_idx = elem.is_uppercase() as usize;
+                        let color_idx = elem.is_lowercase() as usize;
                         elem.make_ascii_lowercase();
                         let piece_idx = match elem {
                             'p' => 0,
@@ -149,11 +152,58 @@ impl Board {
         })
     }
 
-    pub fn legal_moves(&self) -> Vec<Move> {
-        let mut moves: Vec<Move> = Vec::with_capacity(218);
+    fn pawn_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let friend = self.color_bb[!(self.white_to_move) as usize];
+        let enemy = self.color_bb[self.white_to_move as usize];
 
-        let friend = self.color_bb[self.white_to_move as usize];
-        let enemy = self.color_bb[!(self.white_to_move) as usize];
+        let en_passant_bb = match self.en_passant_target {
+            Some(val) => val.bb(),
+            None      => Bitboard::EMPTY
+        };
+        for pawn_bb in friend & self.piece_bb[PAWN_IDX] {
+            for attack_bb in p_move_gen(pawn_bb, !self.white_to_move, friend, enemy, en_passant_bb) {
+                let flags: Vec<Flag> = if !(attack_bb & (Bitboard::RANK_1 | Bitboard::RANK_8)).is_empty() {
+                    if !(attack_bb & enemy).is_empty() {
+                        vec![
+                            Flag::PromoteCaptureN,
+                            Flag::PromoteCaptureB,
+                            Flag::PromoteCaptureR,
+                            Flag::PromoteCaptureQ
+                        ]
+                    } else {
+                        vec![
+                            Flag::PromoteN,
+                            Flag::PromoteB,
+                            Flag::PromoteR,
+                            Flag::PromoteQ
+                        ]
+                    }
+                } else if (!(attack_bb & Bitboard::RANK_4).is_empty() &&  self.white_to_move) ||
+                          (!(attack_bb & Bitboard::RANK_5).is_empty() && !self.white_to_move) {
+                    vec![Flag::DoublePush]
+                } else if !(attack_bb & enemy).is_empty() {
+                    vec![Flag::Capture]
+                } else {
+                    vec![Flag::Quiet]
+                };
+                for flag in flags {
+                    moves.push(Move::new(
+                        Square::from_bb(pawn_bb).unwrap(),
+                        Square::from_bb(attack_bb).unwrap(),
+                        flag
+                    ));
+                }
+            }
+        }
+
+        moves
+    }
+
+    fn knight_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let friend = self.color_bb[!(self.white_to_move) as usize];
+        let enemy = self.color_bb[self.white_to_move as usize];
 
         for knight_bb in friend & self.piece_bb[KNIGHT_IDX] {
             for attack_bb in n_move_gen(knight_bb) & !friend {
@@ -169,20 +219,14 @@ impl Board {
             }
         }
 
-        for king_bb in friend & self.piece_bb[KING_IDX] {
-            for attack_bb in k_move_gen(king_bb) & !friend {
-                moves.push(Move::new(
-                    Square::from_bb(king_bb).unwrap(),
-                    Square::from_bb(attack_bb).unwrap(),
-                    if (attack_bb & enemy).is_empty() {
-                        Flag::Quiet
-                    } else {
-                        Flag::Capture
-                    }
-                ));
-            }
-        }
-        
+        moves
+    }
+
+    fn bishop_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let friend = self.color_bb[!(self.white_to_move) as usize];
+        let enemy = self.color_bb[self.white_to_move as usize];
+
         for bishop_bb in friend & self.piece_bb[BISHOP_IDX] {
             for attack_bb in b_move_gen(bishop_bb, friend | enemy) & !friend {
                 moves.push(Move::new(
@@ -199,7 +243,127 @@ impl Board {
 
         moves
     }
-    
+
+    fn rook_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let friend = self.color_bb[!(self.white_to_move) as usize];
+        let enemy = self.color_bb[self.white_to_move as usize];
+
+        for rook_bb in friend & self.piece_bb[ROOK_IDX] {
+            for attack_bb in r_move_gen(rook_bb, friend | enemy) & !friend {
+                moves.push(Move::new(
+                    Square::from_bb(rook_bb).unwrap(),
+                    Square::from_bb(attack_bb).unwrap(),
+                    if (attack_bb & enemy).is_empty() {
+                        Flag::Quiet
+                    } else {
+                        Flag::Capture
+                    }
+                ));
+            }
+        }
+
+        moves
+    }
+
+    fn queen_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let friend = self.color_bb[!(self.white_to_move) as usize];
+        let enemy = self.color_bb[self.white_to_move as usize];
+
+        for queen_bb in friend & self.piece_bb[QUEEN_IDX] {
+            for attack_bb in q_move_gen(queen_bb, friend | enemy) & !friend {
+                moves.push(Move::new(
+                    Square::from_bb(queen_bb).unwrap(),
+                    Square::from_bb(attack_bb).unwrap(),
+                    if (attack_bb & enemy).is_empty() {
+                        Flag::Quiet
+                    } else {
+                        Flag::Capture
+                    }
+                ));
+            }
+        }
+
+        moves
+    }
+
+    fn king_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::new();
+        let friend = self.color_bb[!(self.white_to_move) as usize];
+        let enemy = self.color_bb[self.white_to_move as usize];
+
+        for king_bb in friend & self.piece_bb[KING_IDX] {
+            for attack_bb in k_move_gen(king_bb) & !friend {
+                moves.push(Move::new(
+                    Square::from_bb(king_bb).unwrap(),
+                    Square::from_bb(attack_bb).unwrap(),
+                    if (attack_bb & enemy).is_empty() {
+                        Flag::Quiet
+                    } else {
+                        Flag::Capture
+                    }
+                ));
+            }
+        }
+
+        moves
+    }
+
+    pub fn legal_moves(&self) -> Vec<Move> {
+        let mut moves: Vec<Move> = Vec::with_capacity(218);
+        moves.extend(self.pawn_moves());
+        moves.extend(self.knight_moves());
+        moves.extend(self.bishop_moves());
+        moves.extend(self.rook_moves());
+        moves.extend(self.queen_moves());
+        moves.extend(self.king_moves());
+
+        // TODO disgusting filter to determine checks and pins
+        let king_bb = self.piece_bb[KING_IDX] & self.color_bb[!(self.white_to_move) as usize];
+        let mut new_moves: Vec<Move> = Vec::with_capacity(218);
+        moves.into_iter().filter(|x| {
+            new_moves.clear();
+            let mut new_pos = self.clone();
+            new_pos.make_move(x);
+
+            new_moves.extend(new_pos.pawn_moves());
+            new_moves.extend(new_pos.knight_moves());
+            new_moves.extend(new_pos.bishop_moves());
+            new_moves.extend(new_pos.rook_moves());
+            new_moves.extend(new_pos.queen_moves());
+            new_moves.extend(new_pos.king_moves());
+
+            for action in &new_moves {
+                if !(action.targ().bb() & king_bb).is_empty() {
+                    return false;
+                }
+            }
+
+            true
+        }).collect::<Vec<Move>>()
+    }
+
+    pub fn make_move(&mut self, action: &Move) {
+        self.color_bb[!(self.white_to_move) as usize] &= !action.orig().bb();
+        self.color_bb[!(self.white_to_move) as usize] |=  action.targ().bb();
+        self.color_bb[  self.white_to_move  as usize] &= !action.targ().bb();
+
+        let mut piece_idx = 99;
+        for (i, piece_bb_idx) in self.piece_bb.iter().enumerate() {
+            if !(*piece_bb_idx & action.orig().bb()).is_empty() {
+                piece_idx = i;
+                break;
+            }
+        }
+
+        self.piece_bb[piece_idx] &= !action.orig().bb();
+        self.piece_bb[piece_idx] |=  action.targ().bb();
+        
+        self.half_move_clock += 1;
+        self.white_to_move = !self.white_to_move;
+    }
+
     pub fn colors(&self) -> [Bitboard; 2] {
         self.color_bb
     }
@@ -236,7 +400,7 @@ impl fmt::Debug for Board {
                     let bit = (bytes[k / 8] >> (k % 8)) % 2;
 
                     if bit != 0 {
-                        board_arr[k] = char::from_u32((9817 - j + i * 6) as u32).unwrap_or('?');
+                        board_arr[k] = char::from_u32((9823 - j - i * 6) as u32).unwrap_or('?');
                     }
                 }
             }

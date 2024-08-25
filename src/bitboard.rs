@@ -82,7 +82,7 @@ impl BitAnd for Bitboard {
 
 impl BitAndAssign for Bitboard {
     fn bitand_assign(&mut self, rhs: Self) {
-        self.0 |= rhs.0;
+        self.0 &= rhs.0;
     }
 }
 
@@ -123,7 +123,7 @@ impl fmt::Debug for Bitboard {
         let bytes = self.0.to_be_bytes();
 
         for i in 0..64 {
-            let bit = (bytes[7 - (i / 8)] >> (i % 8)) % 2;
+            let bit = (bytes[i / 8] >> (i % 8)) % 2;
 
             output.push_str(&bit.to_string());
 
@@ -157,8 +157,17 @@ impl Bitboard {
     pub const A_FILE: Bitboard =            Bitboard(0x01_01_01_01_01_01_01_01);
     pub const H_FILE: Bitboard =            Bitboard(0x80_80_80_80_80_80_80_80);
 
-    pub const STARTING_WHITE: Bitboard =    Bitboard(0xff_ff_00_00_00_00_00_00);
-    pub const STARTING_BLACK: Bitboard =    Bitboard(0x00_00_00_00_00_00_ff_ff);
+    pub const RANK_1: Bitboard =            Bitboard(0x00_00_00_00_00_00_00_ff);
+    pub const RANK_2: Bitboard =            Bitboard(0x00_00_00_00_00_00_ff_00);
+    pub const RANK_3: Bitboard =            Bitboard(0x00_00_00_00_00_ff_00_00);
+    pub const RANK_4: Bitboard =            Bitboard(0x00_00_00_00_ff_00_00_00);
+    pub const RANK_5: Bitboard =            Bitboard(0x00_00_00_ff_00_00_00_00);
+    pub const RANK_6: Bitboard =            Bitboard(0x00_00_ff_00_00_00_00_00);
+    pub const RANK_7: Bitboard =            Bitboard(0x00_ff_00_00_00_00_00_00);
+    pub const RANK_8: Bitboard =            Bitboard(0xff_00_00_00_00_00_00_00);
+
+    pub const STARTING_WHITE: Bitboard =    Bitboard(0x00_00_00_00_00_00_ff_ff);
+    pub const STARTING_BLACK: Bitboard =    Bitboard(0xff_ff_00_00_00_00_00_00);
     pub const STARTING_PAWNS: Bitboard =    Bitboard(0x00_ff_00_00_00_00_ff_00);
     pub const STARTING_KNIGHTS: Bitboard =  Bitboard(0x42_00_00_00_00_00_00_42);
     pub const STARTING_BISHOPS: Bitboard =  Bitboard(0x24_00_00_00_00_00_00_24);

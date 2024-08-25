@@ -1,9 +1,13 @@
 use super::square::Square;
 use std::fmt;
 
+const ORIG_MASK: u16 = 0b1111_1100_0000_0000;
+const TARG_MASK: u16 = 0b0000_0011_1111_0000;
+const FLAG_MASK: u16 = 0b0000_0000_0000_1111;
+
 pub struct Move(u16);
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Flag {
     Quiet = 0b0000,
     DoublePush = 0b0001,
@@ -51,6 +55,18 @@ impl Move {
 
         Self(output)
     }
+
+    pub fn orig(&self) -> Square {
+        Square::new((self.0 >> 10) as u8).unwrap()
+    }
+
+    pub fn targ(&self) -> Square {
+        Square::new(((self.0 & TARG_MASK ) >> 4) as u8).unwrap()
+    }
+
+    pub fn flag(&self) -> Flag {
+        Flag::new((self.0 & FLAG_MASK) as u8).unwrap()
+    }
 }
 
 impl fmt::Debug for Move {
@@ -62,10 +78,9 @@ impl fmt::Debug for Move {
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Move({} to {}, {:?})",
-            Square::new((self.0 >> 10) as u8).unwrap_or(Square::A1),
-            Square::new((self.0 >> 4 ) as u8).unwrap_or(Square::A1),
-            Flag::new((self.0 % 0b10000) as u8).unwrap()
-            //self.0 % 0b10000
+            self.orig(),
+            self.targ(),
+            self.flag()
         )
     }
 }
