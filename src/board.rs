@@ -19,7 +19,7 @@ const ROOK_IDX: usize = 3;
 const QUEEN_IDX: usize = 4;
 const KING_IDX: usize = 5;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Board {
     color_bb: [Bitboard; 2],
     piece_bb: [Bitboard; 6],
@@ -30,6 +30,7 @@ pub struct Board {
     can_castle_bq: bool,
     en_passant_target: Option<Square>,
     half_move_clock: u8,
+    total_ply: u16
 }
 
 impl Board {
@@ -53,6 +54,7 @@ impl Board {
         can_castle_bq: true,
         en_passant_target: None,
         half_move_clock: 0,
+        total_ply: 0
     };
 
     pub fn from_fen(fen: &str) -> Result<Self, &'static str> {
@@ -64,7 +66,6 @@ impl Board {
         let mut can_castle_bk: bool = false;
         let mut can_castle_bq: bool = false;
         let mut en_passant_target: Option<Square> = None;
-        let mut half_move_clock: u8 = 0;
 
         let fen_components: Vec<&str> = fen.split_whitespace().collect();
         println!("{:?}", fen_components);
@@ -114,8 +115,8 @@ impl Board {
             match character {
                 'K' => can_castle_wk = true,
                 'Q' => can_castle_wq = true,
-                'k' => can_castle_wq = true,
-                'q' => can_castle_wq = true,
+                'k' => can_castle_bk = true,
+                'q' => can_castle_bq = true,
                 '-' => continue,
                  _  => return Err("Invalid castling validity."),
 
@@ -123,6 +124,7 @@ impl Board {
         }
 
         let target = *fen_components.get(3).unwrap();
+        println!("{target}");
         en_passant_target = match target {
             "-" => None,
              _  => match Square::from_algebraic(target) {
@@ -131,13 +133,16 @@ impl Board {
              },
         };
 
-        half_move_clock = match fen_components.get(4).unwrap().parse::<u8>() {
+        let half_move_clock = match fen_components.get(4).unwrap().parse::<u8>() {
             Ok(v) => v,
             Err(_)    => return Err("Invalid half move."),
         };
 
-
-
+        let full_moves = fen_components.get(5).unwrap().parse::<u16>().unwrap();
+        let total_ply = match white_to_move {
+            true  => (full_moves - 1) * 2,
+            false => (full_moves - 1) * 2 + 1
+        };
 
         Ok(Board {
             color_bb,
@@ -149,6 +154,7 @@ impl Board {
             can_castle_bq,
             en_passant_target,
             half_move_clock,
+            total_ply
         })
     }
 
@@ -162,7 +168,7 @@ impl Board {
             None      => Bitboard::EMPTY
         };
         for pawn_bb in friend & self.piece_bb[PAWN_IDX] {
-            for attack_bb in p_move_gen(pawn_bb, !self.white_to_move, friend, enemy, en_passant_bb) {
+            for attack_bb in p_move_gen(pawn_bb, self.white_to_move, friend, enemy, en_passant_bb) {
                 let flags: Vec<Flag> = if !(attack_bb & (Bitboard::RANK_1 | Bitboard::RANK_8)).is_empty() {
                     if !(attack_bb & enemy).is_empty() {
                         vec![
@@ -313,6 +319,10 @@ impl Board {
     pub fn legal_moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(218);
         moves.extend(self.pawn_moves());
+        println!("test");
+        for action in self.pawn_moves() {
+            println!("{}", action);
+        }
         moves.extend(self.knight_moves());
         moves.extend(self.bishop_moves());
         moves.extend(self.rook_moves());
@@ -320,12 +330,14 @@ impl Board {
         moves.extend(self.king_moves());
 
         // TODO disgusting filter to determine checks and pins
-        let king_bb = self.piece_bb[KING_IDX] & self.color_bb[!(self.white_to_move) as usize];
         let mut new_moves: Vec<Move> = Vec::with_capacity(218);
         moves.into_iter().filter(|x| {
             new_moves.clear();
+            // this might be the first problem area. possibly make and unmake moves for current
+            // position instead?
             let mut new_pos = self.clone();
             new_pos.make_move(x);
+            let king_bb = new_pos.piece_bb[KING_IDX] & new_pos.enemy();
 
             new_moves.extend(new_pos.pawn_moves());
             new_moves.extend(new_pos.knight_moves());
@@ -364,6 +376,14 @@ impl Board {
         self.white_to_move = !self.white_to_move;
     }
 
+    pub fn friend(&self) -> Bitboard {
+        self.color_bb[!(self.white_to_move) as usize]
+    }
+
+    pub fn enemy(&self) -> Bitboard {
+        self.color_bb[self.white_to_move as usize]
+    }
+
     pub fn colors(&self) -> [Bitboard; 2] {
         self.color_bb
     }
@@ -373,16 +393,11 @@ impl Board {
     }
 }
 
-impl PartialEq for Board {
-    fn eq(&self, other: &Self) -> bool {
-        self.color_bb == other.color_bb && self.piece_bb == other.piece_bb
-    }
-}
-
 impl fmt::Debug for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut output = String::new();
         let mut board_arr: [char; 64] = ['?'; 64];
+        output.push('\n');
 
         for i in 0..board_arr.len() {
             if i % 16 > 7 && i % 2 == 0
@@ -416,10 +431,47 @@ impl fmt::Debug for Board {
             }
         }
 
-        output.push_str("\nLegal moves: \n");
+        output.push_str(&format!(" {} to move\n",
+            match self.white_to_move  {
+                true  => "White",
+                false => "Black"
+            }
+        ));
+
+        output.push_str(&format!("{:^15}\n",
+            format!("{} ply", self.total_ply)
+        ));
+
+        output.push_str(&format!("{:^15}\n\n", format!("ep_targ  {}",
+            match self.en_passant_target {
+                Some(val) => format!("{}", val),
+                None      => "--".to_string()
+            }
+        )));
+
+        output.push_str(&format!("Castle legality\n     w    b\nk    {}    {}\nq    {}    {}\n",
+            match self.can_castle_wk {
+                true  => "✓",
+                false => "𐄂"
+            },
+            match self.can_castle_bk {
+                true  => "✓",
+                false => "𐄂"
+            },
+            match self.can_castle_wq {
+                true  => "✓",
+                false => "𐄂"
+            },
+            match self.can_castle_bq {
+                true  => "✓",
+                false => "𐄂"
+            },
+        ));
+
+        /*output.push_str("\nLegal moves: \n");
         for (i, action) in self.legal_moves().iter().enumerate() {
             output.push_str(&format!("{: <6}{}\n", i+1, action));
-        }
+        }*/
 
         write!(f, "{}", output)
     }
@@ -431,23 +483,67 @@ mod tests {
 
     #[test]
     fn test_fen_starting() {
-        let output: Board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+        let output = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
 
         assert_eq!(output, Board::STARTING_POSITION);
     }
 
     #[test]
     fn test_fen_opening() {
-        let output: Board = Board::from_fen("").unwrap();
+        let output = Board::from_fen("rn1qkbnr/pp3ppp/2p1p3/3pPb2/3P4/5N2/PPP2PPP/RNBQKB1R w KQkq - 0 5").unwrap();
+        let expected_output = Board {
+            color_bb: [
+                Bitboard::new(0x000000100820e7bf), // white
+                Bitboard::new(0xfbe3142800000000), // black
+            ],
+            piece_bb: [
+                Bitboard::new(0x00e314180800e700), // pawn
+                Bitboard::new(0x4200000000200002), // knight
+                Bitboard::new(0x2000002000000024), // bishop
+                Bitboard::new(0x8100000000000081), // rooks
+                Bitboard::new(0x0800000000000008), // queens
+                Bitboard::new(0x1000000000000010), // queens
+            ],
+            white_to_move: true,
+            can_castle_wk: true,
+            can_castle_wq: true,
+            can_castle_bk: true,
+            can_castle_bq: true,
+            en_passant_target: None,
+            half_move_clock: 0,
+            total_ply: 8
+        };
 
-        todo!();
+        assert_eq!(output, expected_output);
     }
 
     #[test]
     fn test_fen_middlegame() {
-        let output: Board = Board::from_fen("").unwrap();
+        let output = Board::from_fen("r1bq1rk1/1p2bpp1/p1nppn1p/8/3NP1PP/2N1B3/PPPQBP2/2KR3R b - g3 0 11").unwrap();
+        let expected_output = Board {
+            color_bb: [
+                Bitboard::new(0x00000000d8143f8c), // white
+                Bitboard::new(0x6d72bd0000000000), // black
+            ],
+            piece_bb: [
+                Bitboard::new(0x00629900d0002700), // pawn
+                Bitboard::new(0x0000240008040000), // knight
+                Bitboard::new(0x0410000000101000), // bishop
+                Bitboard::new(0x2100000000000088), // rooks
+                Bitboard::new(0x0800000000000800), // queens
+                Bitboard::new(0x4000000000000004), // queens
+            ],
+            white_to_move: false,
+            can_castle_wk: false,
+            can_castle_wq: false,
+            can_castle_bk: false,
+            can_castle_bq: false,
+            en_passant_target: Some(Square::G3),
+            half_move_clock: 0,
+            total_ply: 21
+        };
 
-        todo!();
+        assert_eq!(output, expected_output);
     }
 
     #[test]

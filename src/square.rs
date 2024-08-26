@@ -27,6 +27,7 @@ impl Square {
         }
     }
 
+    /// generates a square from a designated `rank` and `file` index. 0,0 is bottom-left.
     pub fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
         Self::new(rank * 8 + file)
     }
@@ -37,7 +38,7 @@ impl Square {
             None => return Err("Invalid file parameter"),
         };
         let rank = match val.chars().nth(1) {
-            Some(v) => 8 - ((v as u8) - 0x30),
+            Some(v) => (v as u8) - 0x30 - 1,
             None => return Err("Invalid rank parameter"),
         };
 
@@ -71,7 +72,8 @@ impl Square {
 
 impl fmt::Debug for Square {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:#06b}", self.0)
+        //write!(f, "{}", self)
+        write!(f, "{:06b}", self.0)
     }
 }
 
@@ -193,10 +195,10 @@ mod tests {
             Err(_) => panic!(),
         };
 
-        assert_eq!(sq1, Square::D8);
-        assert_eq!(sq2, Square::E4);
-        assert_eq!(sq3, Square::A8);
-        assert_eq!(sq4, Square::H1);
+        assert_eq!(sq1, Square::D1);
+        assert_eq!(sq2, Square::E5);
+        assert_eq!(sq3, Square::A1);
+        assert_eq!(sq4, Square::H8);
     }
 
     #[test]
@@ -235,11 +237,11 @@ mod tests {
             Err(_) => panic!(),
         };
 
-        assert_eq!(sq1.val(), Square::C6.val());
+        assert_eq!(sq1.val(), Square::C3.val());
         assert_eq!(sq2.val(), 27);
-        assert_eq!(sq3.val(), Square::A8.val());
-        assert_eq!(sq4.val(), Square::H1.val());
-        assert_eq!(Square::D4.val(), 35);
+        assert_eq!(sq3.val(), Square::A1.val());
+        assert_eq!(sq4.val(), Square::H8.val());
+        assert_eq!(Square::D5.val(), 35);
     }
 
     #[test]
@@ -253,9 +255,9 @@ mod tests {
 
     #[test]
     fn test_rank() {
-        assert_eq!(Square::E3.rank(), 5);
-        assert_eq!(Square::B8.rank(), 0);
-        assert_eq!(Square::C1.rank(), 7);
+        assert_eq!(Square::E6.rank(), 5);
+        assert_eq!(Square::B1.rank(), 0);
+        assert_eq!(Square::C8.rank(), 7);
     }
 
     #[test]
@@ -267,10 +269,10 @@ mod tests {
 
     #[test]
     fn test_debug_print() {
-        assert_eq!(format!("{:?}", Square::D4), "35");
-        assert_eq!(format!("{:?}", Square::G7), "14");
-        assert_eq!(format!("{:?}", Square::A8), "0");
-        assert_eq!(format!("{:?}", Square::H1), "63");
+        assert_eq!(format!("{:?}", Square::D5), "100011");
+        assert_eq!(format!("{:?}", Square::G2), "001110");
+        assert_eq!(format!("{:?}", Square::A1), "000000");
+        assert_eq!(format!("{:?}", Square::H8), "111111");
     }
 
     #[test]

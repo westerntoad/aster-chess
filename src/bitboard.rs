@@ -30,7 +30,7 @@ impl Bitboard {
     }
 
     pub fn nort_one(&self) -> Bitboard {
-        Self(&self.0 >> 8)
+        Self(&self.0 << 8)
     }
     
     pub fn east_one(&self) -> Bitboard {
@@ -38,7 +38,7 @@ impl Bitboard {
     }
     
     pub fn sout_one(&self) -> Bitboard {
-        Self(&self.0 << 8)
+        Self(&self.0 >> 8)
     }
 
     pub fn west_one(&self) -> Bitboard {

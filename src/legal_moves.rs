@@ -142,8 +142,8 @@ mod tests {
 
     #[test]
     fn test_n_move_gen() {
-        let output = n_move_gen(Square::E4.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x28440044280000);
+        let output = n_move_gen(Square::E4.bb());
+        let expected_output = Bitboard::new(0x0000284400442800);
 
 
         assert_eq!(output, expected_output);
@@ -151,32 +151,32 @@ mod tests {
 
     #[test]
     fn test_n_move_gen_edge_close() {
-        let output = n_move_gen(Square::A4.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x02040004020000);
+        let output = n_move_gen(Square::A4.bb());
+        let expected_output = Bitboard::new(0x0000020400040200);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
     fn test_n_move_gen_edge_far() {
-        let output = n_move_gen(Square::G5.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x00a0100010a000);
+        let output = n_move_gen(Square::G5.bb());
+        let expected_output = Bitboard::new(0x00a0100010a00000);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
     fn test_n_move_gen_corner() {
-        let output = n_move_gen(Square::A1.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x04020000000000);
+        let output = n_move_gen(Square::A1.bb());
+        let expected_output = Bitboard::new(0x0000000000020400);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
     fn test_k_move_gen() {
-        let output = k_move_gen(Square::E2.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x3828380000000000);
+        let output = k_move_gen(Square::E2.bb());
+        let expected_output = Bitboard::new(0x0000000000382838);
 
 
         assert_eq!(output, expected_output);
@@ -184,16 +184,16 @@ mod tests {
 
     #[test]
     fn test_k_move_gen_edge() {
-        let output = k_move_gen(Square::A4.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x00030203000000);
+        let output = k_move_gen(Square::A4.bb());
+        let expected_output = Bitboard::new(0x0000000302030000);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
     fn test_k_move_gen_corner() {
-        let output = k_move_gen(Square::H8.bb(), Bitboard::EMPTY, Bitboard::EMPTY);
-        let expected_output = Bitboard::new(0x0000000000c040);
+        let output = k_move_gen(Square::H8.bb());
+        let expected_output = Bitboard::new(0x40c0000000000000);
 
         assert_eq!(output, expected_output);
     }
