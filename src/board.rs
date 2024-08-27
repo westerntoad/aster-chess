@@ -319,10 +319,6 @@ impl Board {
     pub fn legal_moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(218);
         moves.extend(self.pawn_moves());
-        println!("test");
-        for action in self.pawn_moves() {
-            println!("{}", action);
-        }
         moves.extend(self.knight_moves());
         moves.extend(self.bishop_moves());
         moves.extend(self.rook_moves());
@@ -484,6 +480,7 @@ impl fmt::Debug for Board {
 
 #[cfg(test)]
 mod tests {
+    use std::time::Instant;
     use super::*;
 
     #[test]
@@ -578,5 +575,32 @@ mod tests {
         };
 
         assert_eq!(output, expected_output);
+    }
+
+    fn num_of_positions(position: Board, depth: u32) -> u64 {
+        if depth == 0 { return 1 };
+
+        let mut total_positions = 0;
+        for action in position.legal_moves() {
+            let mut new_position = position.clone();
+            new_position.make_move(&action);
+            total_positions += num_of_positions(new_position, depth - 1);
+        }
+
+        total_positions
+    }
+
+    #[test]
+    fn test_num_pos_starting() {
+        const PLY_AMOUNT: usize = 5;
+        const EXPECTED_OUTPUT: [u64; PLY_AMOUNT+1] = [1, 20, 400, 8_902, 197_281, 4_865_609];
+
+        for i in 0..=PLY_AMOUNT {
+            let now = Instant::now();
+            let output = num_of_positions(Board::STARTING_POSITION, i as u32);
+            let elapsed = now.elapsed();
+            println!("Running test_num_pos_starting at ply={}. Elapsed time={:.2?}", i, elapsed);
+            assert_eq!(output, EXPECTED_OUTPUT[i]);
+        }
     }
 }

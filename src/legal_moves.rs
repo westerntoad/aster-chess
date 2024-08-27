@@ -14,10 +14,10 @@ pub fn p_move_gen(
 
     let blocks = friend | enemy;
     let attacks = (forward.east_one() | forward.west_one()) & (enemy | en_passant);
-    let movement = if is_white && orig.rank() == 6 {
+    let movement = if is_white && orig.rank() == 1 {
         let step = forward & !blocks;
         step | step.nort_one() & !blocks
-    } else if !is_white && orig.rank() == 1 {
+    } else if !is_white && orig.rank() == 7 {
         let step = forward & !blocks;
         step | step.sout_one() & !blocks
     } else {
