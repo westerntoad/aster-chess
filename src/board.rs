@@ -442,12 +442,17 @@ impl fmt::Debug for Board {
             format!("{} ply", self.total_ply)
         ));
 
-        output.push_str(&format!("{:^15}\n\n", format!("ep_targ  {}",
+        output.push_str(&format!("{:^15}\n", format!("ep_targ {}",
             match self.en_passant_target {
                 Some(val) => format!("{}", val),
                 None      => "--".to_string()
             }
         )));
+
+
+        output.push_str(&format!("{:^15}\n",
+            format!("hm_clock {}", self.half_move_clock)
+        ));
 
         output.push_str(&format!("Castle legality\n     w    b\nk    {}    {}\nq    {}    {}\n",
             match self.can_castle_wk {
@@ -549,29 +554,29 @@ mod tests {
     #[test]
     fn test_fen_endgame() {
         let output: Board = Board::from_fen("8/5k2/1p1p2p1/3Pnb1p/2P2b1P/5P2/3qBP2/4NKRQ w - - 3 39").unwrap();
-        
-        todo!();
-        
-        /*let expected_output: Board = Board {
+        let expected_output = Board {
             color_bb: [
-                Bitboard::new(),
-                Bitboard::new(),
+                Bitboard::new(0x00000008842030f0), // white
+                Bitboard::new(0x00204ab020000800), // black
             ],
             piece_bb: [
-                Bitboard::new(),
-                Bitboard::new(),
-                Bitboard::new(),
-                Bitboard::new(),
-                Bitboard::new(),
-                Bitboard::new(),
+                Bitboard::new(0x00004a8884202000), // pawn
+                Bitboard::new(0x0000001000000010), // knight
+                Bitboard::new(0x0000002020001000), // bishop
+                Bitboard::new(0x0000000000000040), // rooks
+                Bitboard::new(0x0000000000000880), // queens
+                Bitboard::new(0x0020000000000020), // kings
             ],
             white_to_move: true,
-            can_castle_wk: true,
-            can_castle_wq: true,
-            can_castle_bk: true,
-            can_castle_bq: true,
+            can_castle_wk: false,
+            can_castle_wq: false,
+            can_castle_bk: false,
+            can_castle_bq: false,
             en_passant_target: None,
-            half_move_clock: 0,
-        };*/
+            half_move_clock: 3,
+            total_ply: 76
+        };
+
+        assert_eq!(output, expected_output);
     }
 }

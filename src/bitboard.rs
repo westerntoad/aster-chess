@@ -133,7 +133,7 @@ impl fmt::Debug for Bitboard {
             }
         }
 
-        output.push_str(&format!("\nHex:\n{:#016x}", self.0));
+        output.push_str(&format!("\nHex:\n{:016x}", self.0));
         write!(f, "{}", output)
     }
 }
