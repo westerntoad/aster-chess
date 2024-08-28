@@ -17,7 +17,7 @@ pub fn p_move_gen(
     let movement = if is_white && orig.rank() == 1 {
         let step = forward & !blocks;
         step | step.nort_one() & !blocks
-    } else if !is_white && orig.rank() == 7 {
+    } else if orig.rank() == 6 {
         let step = forward & !blocks;
         step | step.sout_one() & !blocks
     } else {
