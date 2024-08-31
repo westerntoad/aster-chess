@@ -154,26 +154,46 @@ impl Bitboard {
     pub const EMPTY: Bitboard =             Bitboard(0);
     pub const UNIVERSE: Bitboard =          Bitboard(u64::MAX);
 
-    pub const A_FILE: Bitboard =            Bitboard(0x01_01_01_01_01_01_01_01);
-    pub const H_FILE: Bitboard =            Bitboard(0x80_80_80_80_80_80_80_80);
+    pub const A_FILE: Bitboard =            Bitboard(0x0101010101010101);
+    pub const H_FILE: Bitboard =            Bitboard(0x8080808080808080);
 
-    pub const RANK_1: Bitboard =            Bitboard(0x00_00_00_00_00_00_00_ff);
-    pub const RANK_2: Bitboard =            Bitboard(0x00_00_00_00_00_00_ff_00);
-    pub const RANK_3: Bitboard =            Bitboard(0x00_00_00_00_00_ff_00_00);
-    pub const RANK_4: Bitboard =            Bitboard(0x00_00_00_00_ff_00_00_00);
-    pub const RANK_5: Bitboard =            Bitboard(0x00_00_00_ff_00_00_00_00);
-    pub const RANK_6: Bitboard =            Bitboard(0x00_00_ff_00_00_00_00_00);
-    pub const RANK_7: Bitboard =            Bitboard(0x00_ff_00_00_00_00_00_00);
-    pub const RANK_8: Bitboard =            Bitboard(0xff_00_00_00_00_00_00_00);
+    pub const RANK_1: Bitboard =            Bitboard(0x00000000000000ff);
+    pub const RANK_2: Bitboard =            Bitboard(0x000000000000ff00);
+    pub const RANK_3: Bitboard =            Bitboard(0x0000000000ff0000);
+    pub const RANK_4: Bitboard =            Bitboard(0x00000000ff000000);
+    pub const RANK_5: Bitboard =            Bitboard(0x000000ff00000000);
+    pub const RANK_6: Bitboard =            Bitboard(0x0000ff0000000000);
+    pub const RANK_7: Bitboard =            Bitboard(0x00ff000000000000);
+    pub const RANK_8: Bitboard =            Bitboard(0xff00000000000000);
 
-    pub const STARTING_WHITE: Bitboard =    Bitboard(0x00_00_00_00_00_00_ff_ff);
-    pub const STARTING_BLACK: Bitboard =    Bitboard(0xff_ff_00_00_00_00_00_00);
-    pub const STARTING_PAWNS: Bitboard =    Bitboard(0x00_ff_00_00_00_00_ff_00);
-    pub const STARTING_KNIGHTS: Bitboard =  Bitboard(0x42_00_00_00_00_00_00_42);
-    pub const STARTING_BISHOPS: Bitboard =  Bitboard(0x24_00_00_00_00_00_00_24);
-    pub const STARTING_ROOKS: Bitboard =    Bitboard(0x81_00_00_00_00_00_00_81);
-    pub const STARTING_QUEENS: Bitboard =   Bitboard(0x08_00_00_00_00_00_00_08);
-    pub const STARTING_KINGS: Bitboard =    Bitboard(0x10_00_00_00_00_00_00_10);
+    pub const STARTING_WHITE: Bitboard =    Bitboard(0x000000000000ffff);
+    pub const STARTING_BLACK: Bitboard =    Bitboard(0xffff000000000000);
+    pub const STARTING_PAWNS: Bitboard =    Bitboard(0x00ff00000000ff00);
+    pub const STARTING_KNIGHTS: Bitboard =  Bitboard(0x4200000000000042);
+    pub const STARTING_BISHOPS: Bitboard =  Bitboard(0x2400000000000024);
+    pub const STARTING_ROOKS: Bitboard =    Bitboard(0x8100000000000081);
+    pub const STARTING_QUEENS: Bitboard =   Bitboard(0x0800000000000008);
+    pub const STARTING_KINGS: Bitboard =    Bitboard(0x1000000000000010);
+
+    pub const WK_MASK: Bitboard =           Bitboard(0x0000000000000060);
+    pub const WQ_MASK: Bitboard =           Bitboard(0x000000000000000e);
+    pub const BK_MASK: Bitboard =           Bitboard(0x6000000000000000);
+    pub const BQ_MASK: Bitboard =           Bitboard(0x0e00000000000000);
+
+    pub const WK_ROOK: Bitboard =           Bitboard(0x0000000000000080);
+    pub const WQ_ROOK: Bitboard =           Bitboard(0x0000000000000001);
+    pub const BK_ROOK: Bitboard =           Bitboard(0x8000000000000000);
+    pub const BQ_ROOK: Bitboard =           Bitboard(0x0100000000000000);
+
+    pub const WK_ROOK_DEST: Bitboard =      Bitboard(0x0000000000000020);
+    pub const WQ_ROOK_DEST: Bitboard =      Bitboard(0x0000000000000008);
+    pub const BK_ROOK_DEST: Bitboard =      Bitboard(0x2000000000000000);
+    pub const BQ_ROOK_DEST: Bitboard =      Bitboard(0x0800000000000000);
+
+    pub const WK_KING_DEST: Bitboard =      Bitboard(0x0000000000000040);
+    pub const WQ_KING_DEST: Bitboard =      Bitboard(0x0000000000000004);
+    pub const BK_KING_DEST: Bitboard =      Bitboard(0x4000000000000000);
+    pub const BQ_KING_DEST: Bitboard =      Bitboard(0x0400000000000000);
 }
 
 

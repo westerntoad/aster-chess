@@ -48,6 +48,9 @@ impl Flag {
 }
 
 impl Move {
+    pub const SHORT_CASTLE: Self = Self(0b0010);
+    pub const LONG_CASTLE: Self = Self(0b0011);
+
     pub fn new(orig: Square, targ: Square, flag: Flag) -> Self {
         let mut output = (orig.val() as u16) << 10;
         output        |= (targ.val() as u16) << 4;
@@ -66,6 +69,33 @@ impl Move {
 
     pub fn flag(&self) -> Flag {
         Flag::new((self.0 & FLAG_MASK) as u8).unwrap()
+    }
+
+    pub fn is_capture(&self) -> bool {
+        self.0 & 0b100 != 0
+    }
+
+    pub fn is_castle(&self) -> bool {
+        self.0 & 0b1110 == 0b0010
+    }
+
+    pub fn is_promotion(&self) -> bool {
+        self.0 & 0b1100 == 0b1100
+    }
+
+    pub fn ep_square(&self) -> Option<Square> {
+        if self.0 & 0b1111 == 0b0001 {
+            let rank = match self.orig().rank() {
+                1 => 2,
+                6 => 5,
+                _ => {
+                    panic!("Invalid double push. Move={}", self)
+                }
+            };
+            Some(Square::from_coord(rank, self.targ().file()).unwrap())
+        } else {
+            None
+        }
     }
 }
 

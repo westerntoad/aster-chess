@@ -24,25 +24,21 @@ fn main() -> std::io::Result<()> {
 
 
     //let board = Board::from_fen("8/8/2k5/5N2/4PPP1/1r3KP1/4PPP1/8 w - - 0 20").unwrap();
-    let mut board = Board::STARTING_POSITION;
+    let mut board = Board::from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1").unwrap();
     let mut legal_moves = board.legal_moves();
-    board.make_move(&legal_moves[0]);
-    legal_moves = board.legal_moves();
     println!("{:#?}\n", board);
     for (i, action) in legal_moves.iter().enumerate() {
         println!("{: <6}{}", i+1, action);
     }
-    //board.make_move(&legal_moves[0]);
-    //println!("{:#?}", board);
 
-    println!("{}", BoardStateFlags::new(
-            true, // can_castle_wk
-            true, // can_castle_wq
-            true, // can_castle_bk
-            true, // can_castle_bq
-            None, // en_passant_target
-            0     // half_move_clock
-        ));
+    /*for _ in 0..20 {
+        println!("{:#?}\n", board);
+        for (i, action) in legal_moves.iter().enumerate() {
+            println!("{: <6}{}", i+1, action);
+        }
+        board.make_move(&legal_moves[0]);
+        legal_moves = board.legal_moves();
+    }*/
 
     Ok(())
 }
