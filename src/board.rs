@@ -489,25 +489,19 @@ impl Board {
         moves
     }
 
-    pub fn legal_moves(&self) -> Vec<Move> {
-        // TODO disgusting filter to determine checks and pins
-        let mut new_moves: Vec<Move> = Vec::with_capacity(256);
+    pub fn legal_moves(&mut self) -> Vec<Move> {
         self.moves().into_iter().filter(|x| {
-            new_moves.clear();
-            // this might be the first problem area. possibly make and unmake moves for current
-            // position instead?
-            let mut new_pos = self.clone();
-            new_pos.make_move(x);
-            let king_bb = new_pos.piece_bb[KING_IDX] & new_pos.enemy();
+            self.make_move(x);
+            let king_bb = self.piece_bb[KING_IDX] & self.enemy();
 
-            new_moves.extend(new_pos.moves());
-
-            for action in &new_moves {
+            for action in &self.moves() {
                 if !(action.targ().bb() & king_bb).is_empty() {
+                    self.unmake_move(x);
                     return false;
                 }
             }
 
+            self.unmake_move(x);
             true
         }).collect::<Vec<Move>>()
     }
@@ -613,9 +607,58 @@ impl Board {
         self.white_to_move = !self.white_to_move;
     }
 
-    //pub fn unmake_move(&mut self, action: &Move) {}
+    pub fn unmake_move(&mut self, action: &Move) {
+        let is_short_castle = action.flag() == Flag::ShortCastle;
 
-    pub fn perft(&self, depth: u32) -> u128 {
+        if action.is_castle() {
+            let dest_king = self.friend() & self.piece_bb[KING_IDX];
+            let (orig_rook, dest_rook, orig_king) = match (!self.white_to_move, is_short_castle) {
+                (true, true)   => (Bitboard::WK_ROOK_DEST, Bitboard::WK_ROOK, Bitboard::WK_KING_DEST),
+                (true, false)  => (Bitboard::WQ_ROOK_DEST, Bitboard::WQ_ROOK, Bitboard::WQ_KING_DEST),
+                (false, true)  => (Bitboard::BK_ROOK_DEST, Bitboard::BK_ROOK, Bitboard::BK_KING_DEST),
+                (false, false) => (Bitboard::BQ_ROOK_DEST, Bitboard::BQ_ROOK, Bitboard::BQ_KING_DEST),
+            };
+
+            // TODO
+            self.color_bb[!(self.white_to_move) as usize] &= !( orig_king | orig_rook );
+            self.color_bb[!(self.white_to_move) as usize] |=    dest_king | dest_rook;
+
+            self.piece_bb[ROOK_IDX] &= !orig_rook;
+            self.piece_bb[ROOK_IDX] |=  orig_rook;
+            self.piece_bb[KING_IDX] &= !orig_king;
+            self.piece_bb[KING_IDX] |=  orig_king;
+
+        } else {
+            self.color_bb[!(self.white_to_move) as usize] &= !action.targ().bb();
+            self.color_bb[!(self.white_to_move) as usize] |=  action.orig().bb();
+            self.color_bb[  self.white_to_move  as usize] &= !action.orig().bb();
+
+            let mut piece_idx = 99;
+            for (i, piece_bb_idx) in self.piece_bb.iter().enumerate() {
+                if !(*piece_bb_idx & action.targ().bb()).is_empty() {
+                    piece_idx = i;
+                    break;
+                }
+            }
+
+            self.piece_bb[piece_idx] &= !action.targ().bb();
+            if action.is_promotion() {
+                piece_idx = match action.flag() {
+                    Flag::PromoteCaptureN => KNIGHT_IDX,
+                    Flag::PromoteCaptureB => BISHOP_IDX,
+                    Flag::PromoteCaptureR => ROOK_IDX,
+                    Flag::PromoteCaptureQ => QUEEN_IDX,
+                    _ => panic!("Invalid move flag")
+                };
+            };
+            self.piece_bb[piece_idx] |=  action.orig().bb();
+        }
+
+        self.total_ply -= 1;
+        self.white_to_move = !self.white_to_move;
+    }
+
+    pub fn perft(&mut self, depth: u32) -> u128 {
         if depth == 0 { return 1 };
 
         let mut nodes = 0;
@@ -889,7 +932,7 @@ mod tests {
         assert_eq!(output, expected_output);
     }
 
-    fn test_perft(pos: Board, expected_output: Vec<u128>) {
+    fn test_perft(pos: &mut Board, expected_output: Vec<u128>) {
         for (i, expected) in expected_output.iter().enumerate() {
             let now = Instant::now();
             let output = pos.perft(i as u32);
@@ -905,7 +948,7 @@ mod tests {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Initial_Position
         test_perft(
-            Board::STARTING_POSITION,
+            &mut Board::STARTING_POSITION,
             vec![1, 20, 400, 8_902, 197_281, 4_865_609]
         );
     }
@@ -915,7 +958,7 @@ mod tests {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_2
         test_perft(
-            Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -").unwrap(),
+            &mut Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -").unwrap(),
             vec![1, 48, 2_039, 97_862, 4_085_603, 193_690_690]
         );
     }
@@ -925,7 +968,7 @@ mod tests {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_3
         test_perft(
-            Board::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -").unwrap(),
+            &mut Board::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -").unwrap(),
             vec![1, 14, 191, 2_812, 43_238, 674_624]
         );
     }
@@ -935,7 +978,7 @@ mod tests {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_4
         test_perft(
-            Board::from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1").unwrap(),
+            &mut Board::from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1").unwrap(),
             vec![1, 6, 264, 9_467, 422_333, 15_833_292]
         );
     }
@@ -945,7 +988,7 @@ mod tests {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_5
         test_perft(
-            Board::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap(),
+            &mut Board::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap(),
             vec![1, 44, 1_486, 62_379, 2_103_487, 89_941_194]
         );
     }
@@ -955,7 +998,7 @@ mod tests {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_6
         test_perft(
-            Board::from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10").unwrap(),
+            &mut Board::from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10").unwrap(),
             vec![1, 46, 2_079, 89_890, 3_894_594, 164_075_551]
         );
     }
