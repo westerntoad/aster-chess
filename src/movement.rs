@@ -72,7 +72,7 @@ impl Move {
     }
 
     pub fn is_capture(&self) -> bool {
-        self.0 & 0b100 != 0
+        self.0 & 0b100 != 0 || self.is_en_passant()
     }
 
     pub fn is_castle(&self) -> bool {
@@ -81,6 +81,10 @@ impl Move {
 
     pub fn is_promotion(&self) -> bool {
         self.0 & 0b1100 == 0b1100
+    }
+
+    pub fn is_en_passant(&self) -> bool {
+        self.0 & 0b1111 == 0b0101
     }
 
     pub fn ep_square(&self) -> Option<Square> {
