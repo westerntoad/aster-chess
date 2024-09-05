@@ -279,7 +279,7 @@ impl Board {
         ],
         white_to_move: true,
         state_stack: {
-            let mut stack = [BoardStateFlags::NO_DATA; 17_697];
+            let mut stack = [BoardStateFlags::NO_DATA; MAX_NUM_MOVES];
 
             stack[0] = BoardStateFlags::STARTING;
             stack
@@ -375,7 +375,7 @@ impl Board {
             false => (full_moves - 1) * 2 + 1
         };
 
-        let mut state_stack = [BoardStateFlags::NO_DATA; 17_697];
+        let mut state_stack = [BoardStateFlags::NO_DATA; MAX_NUM_MOVES];
         state_stack[total_ply as usize] = BoardStateFlags::new(
             can_castle_wk,
             can_castle_wq,
@@ -559,7 +559,7 @@ impl Board {
         moves
     }
 
-    pub fn moves(&self) -> Vec<Move> {
+    pub fn moves(&mut self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::with_capacity(256);
         moves.extend(self.pawn_moves());
         moves.extend(self.knight_moves());
@@ -604,59 +604,19 @@ impl Board {
         let is_pawn_move = !(self.piece_bb[PAWN_IDX] & action.orig().bb()).is_empty();
         let (disable_wk, disable_wq, disable_bk, disable_bq) = {
             let (short_rook_home, long_rook_home, king_home) = match self.white_to_move {
-                true  => (Square::H1, Square::H8, Square::E1),
-                false => (Square::A1, Square::H1, Square::E8)
+                true  => (Square::H1, Square::A1, Square::E1),
+                false => (Square::H8, Square::A8, Square::E8)
             };
 
-            let kingside = action.orig() == short_rook_home || action.orig() == king_home;
-            let queenside = action.orig() == long_rook_home || action.orig() == king_home;
+            let disable_all = action.orig() == king_home || action.is_castle();
+            let kingside = action.orig() == short_rook_home || disable_all;
+            let queenside = action.orig() == long_rook_home || disable_all;
 
             match self.white_to_move {
                 true  => ( kingside, queenside, false, false ),
                 false => ( false, false, kingside, queenside )
             }
         };
-        /*let (wk_castle, wq_castle) = {
-            let mut kingside  = false;
-            let mut queenside = false;
-
-            if self.white_to_move {
-                let king_home = !(Square::E1.bb() & self.friend() & self.piece_bb[KING_IDX]).is_empty();
-
-                if self.can_castle_short() {
-                    kingside  = !king_home || (Square::H1.bb() & self.friend() & self.piece_bb[ROOK_IDX]).is_empty()
-                        || is_short_castle;
-                }
-
-                if self.can_castle_long() {
-                    queenside = !king_home || (Square::A1.bb() & self.friend() & self.piece_bb[ROOK_IDX]).is_empty()
-                        || is_long_castle;
-                }
-            }
-
-            (kingside, queenside)
-        };
-
-        let (bk_castle, bq_castle) = {
-            let mut kingside  = false;
-            let mut queenside = false;
-
-            if !self.white_to_move {
-                let king_home = !(Square::E8.bb() & self.friend() & self.piece_bb[KING_IDX]).is_empty();
-
-                if self.can_castle_short() {
-                    kingside  = !king_home || (Square::H8.bb() & self.friend() & self.piece_bb[ROOK_IDX]).is_empty()
-                        || is_short_castle;
-                }
-
-                if self.can_castle_long() {
-                    queenside = !king_home || (Square::A8.bb() & self.friend() & self.piece_bb[ROOK_IDX]).is_empty()
-                        || is_long_castle;
-                }
-            }
-
-            (kingside, queenside)
-        };*/
 
         let mut captured_bb = Bitboard::EMPTY;
         let mut captured_piece = Piece::NoPiece;
@@ -694,39 +654,23 @@ impl Board {
             self.color_bb[!self.white_to_move as usize] |=  action.targ().bb();
             self.color_bb[ self.white_to_move as usize] &= !action.targ().bb();
 
-            let mut orig_piece_idx = 99;
-            let mut captured_piece_idx = 99;
-            for (i, piece_bb_idx) in self.piece_bb.iter().enumerate() {
-                if !(*piece_bb_idx & action.targ().bb()).is_empty() {
-                    captured_piece_idx = i;
-                    captured_bb = *piece_bb_idx & action.targ().bb();
-                }
-
-                if !(*piece_bb_idx & action.orig().bb()).is_empty() {
-                    orig_piece_idx = i;
-                }
-            }
-
+            let mut orig_piece_idx = self.find_piece(action.orig().bb()).index();
             self.piece_bb[orig_piece_idx] &= !action.orig().bb();
             if action.is_promotion() {
                 orig_piece_idx = match action.flag() {
-                    Flag::PromoteCaptureN => KNIGHT_IDX,
-                    Flag::PromoteCaptureB => BISHOP_IDX,
-                    Flag::PromoteCaptureR => ROOK_IDX,
-                    Flag::PromoteCaptureQ => QUEEN_IDX,
+                    Flag::PromoteCaptureN | Flag::PromoteN => KNIGHT_IDX,
+                    Flag::PromoteCaptureB | Flag::PromoteB => BISHOP_IDX,
+                    Flag::PromoteCaptureR | Flag::PromoteR => ROOK_IDX,
+                    Flag::PromoteCaptureQ | Flag::PromoteQ => QUEEN_IDX,
                     _ => panic!("Invalid move flag")
                 };
             };
-            if captured_piece_idx != 99 {
-                self.piece_bb[captured_piece_idx] &= !action.targ().bb();
+
+            captured_piece = self.find_piece(action.targ().bb());
+            if captured_piece.is_piece() {
+                self.piece_bb[captured_piece.index()] &= !action.targ().bb();
             }
             self.piece_bb[orig_piece_idx] |= action.targ().bb();
-
-            captured_piece = match captured_piece_idx {
-                0..=5 => Piece::new(captured_piece_idx as u8 + 1).unwrap(),
-                99    => Piece::NoPiece,
-                _     => panic!()
-            };
         }
         
         self.state_stack[self.total_ply as usize + 1] = self.curr_flags().next_move(
@@ -737,10 +681,7 @@ impl Board {
             disable_bq,
             action.ep_square(),
             captured_piece,
-            match captured_bb.is_empty() {
-                true  => Square::A1,
-                false => Square::from_bb(captured_bb).unwrap()
-            }
+            action.targ()
         );
         self.total_ply += 1;
         self.white_to_move = !self.white_to_move;
@@ -779,19 +720,14 @@ impl Board {
             self.color_bb[ self.white_to_move as usize] |=  action.orig().bb();
             self.color_bb[!self.white_to_move as usize] &= !action.orig().bb();
 
-            let mut targ_piece_idx = 99;
-            for (i, piece_bb_idx) in self.piece_bb.iter().enumerate() {
-                if !(*piece_bb_idx & action.targ().bb()).is_empty() {
-                    targ_piece_idx = i;
-                }
-            }
-
+            let targ_piece = self.find_piece(action.targ().bb());
+            let mut targ_piece_idx = targ_piece.index();
             self.piece_bb[targ_piece_idx] &= !action.targ().bb();
             if action.is_promotion() {
                 targ_piece_idx = PAWN_IDX;
             };
             self.piece_bb[targ_piece_idx] |= action.orig().bb();
-
+            
             let prev_flag = self.curr_flags();
             if prev_flag.captured_piece().is_piece() {
                 self.color_bb[!self.white_to_move as usize] |= prev_flag.captured_piece_sq().bb();
@@ -803,11 +739,59 @@ impl Board {
         self.white_to_move = !self.white_to_move;
     }
 
+    fn find_piece(&self, loc_bb: Bitboard) -> Piece {
+        let mut piece_idx = 99u8;
+
+        for (i, piece_bb_idx) in self.piece_bb.iter().enumerate() {
+            if !(*piece_bb_idx & loc_bb).is_empty() {
+                piece_idx = i as u8;
+                break;
+            }
+        }
+
+        match piece_idx {
+            0..=5 => Piece::new(piece_idx + 1).unwrap(),
+            _     => Piece::NoPiece
+        }
+    }
+
     pub fn perft(&mut self, depth: u32) -> (u128, u128, u128, u128, u128) {
         let (mut captures, mut en_passants, mut castles, mut promotions) = (0u128, 0u128, 0u128, 0u128);
         let nodes = self.perft_helper(depth, &mut captures, &mut en_passants, &mut castles, &mut promotions);
 
         (nodes, captures, en_passants, castles, promotions)
+    }
+
+    pub fn perft_divide(&mut self, depth: u32) -> Vec<(Move, u128)> {
+        if depth == 0 { return vec![]; }
+
+        let moves = self.legal_moves();
+        let mut perfts = Vec::new();
+
+        for action in moves {
+            self.make_move(&action);
+            perfts.push((action.clone(), self.perft_divide_helper(depth - 1)));
+            self.unmake_move(&action);
+        }
+
+        perfts
+    }
+
+    fn perft_divide_helper(&mut self, depth: u32) -> u128 {
+        let moves = self.legal_moves();
+        let n = moves.len() as u128;
+        let mut nodes = 0;
+
+        if depth == 0 { return 1; }
+        if depth == 1 { return n; }
+
+        for action in self.legal_moves() {
+            self.make_move(&action);
+            nodes += self.perft_divide_helper(depth - 1);
+            self.unmake_move(&action);
+        }
+
+        nodes
     }
 
     fn perft_helper(
@@ -837,8 +821,12 @@ impl Board {
         nodes
     }
 
-    fn in_check(&self) -> bool {
-        !(self.attacks() & self.piece_bb[KING_IDX]).is_empty()
+    pub fn in_check(&mut self) -> bool {
+        self.white_to_move = !self.white_to_move;
+        let attacks = self.attacks();
+        self.white_to_move = !self.white_to_move;
+
+        !(attacks & self.piece_bb[KING_IDX] & self.friend()).is_empty()
     }
 
     fn in_checkmate(&mut self) -> bool {
@@ -863,40 +851,52 @@ impl Board {
 
     pub fn attacks(&self) -> Bitboard {
         let mut attacks = Bitboard::EMPTY;
-        
-        for action in &self.moves() {
+
+        let mut moves: Vec<Move> = Vec::with_capacity(256);
+        moves.extend(self.pawn_moves());
+        moves.extend(self.knight_moves());
+        moves.extend(self.bishop_moves());
+        moves.extend(self.rook_moves());
+        moves.extend(self.queen_moves());
+        moves.extend(self.king_moves());
+
+        for action in moves {
             attacks |= action.targ().bb();
         }
 
         attacks
     }
 
-    fn curr_flags(&self) -> BoardStateFlags {
+    pub fn curr_flags(&self) -> BoardStateFlags {
         self.state_stack[self.total_ply as usize]
     }
 
-    fn can_castle_short(&self) -> bool {
-        let (flag, mask, rook_home) = match self.white_to_move {
-            true  => (self.curr_flags().can_castle_wk(), Bitboard::WK_MASK, Bitboard::WK_ROOK),
-            false => (self.curr_flags().can_castle_bk(), Bitboard::BK_MASK, Bitboard::BK_ROOK)
+    pub fn can_castle_short(&mut self) -> bool {
+        let (flag, mask, rook_home, king_home) = match self.white_to_move {
+            true  => (self.curr_flags().can_castle_wk(), Bitboard::WK_MASK, Bitboard::WK_ROOK, Bitboard::W_KING),
+            false => (self.curr_flags().can_castle_bk(), Bitboard::BK_MASK, Bitboard::BK_ROOK, Bitboard::B_KING)
         };
-        let king_is_home = !(Bitboard::W_KING & self.friend() & self.piece_bb[KING_IDX]).is_empty();
-        let rook_is_home = !(rook_home        & self.friend() & self.piece_bb[ROOK_IDX]).is_empty();
         let none_in_mask = ((self.friend() | self.enemy()) & mask).is_empty();
+        let king_is_home = !(king_home & self.friend() & self.piece_bb[KING_IDX]).is_empty();
+        let rook_is_home = !(rook_home & self.friend() & self.piece_bb[ROOK_IDX]).is_empty();
 
-        flag && none_in_mask && king_is_home && rook_is_home
+        flag && none_in_mask && king_is_home && rook_is_home && !self.in_check()
     }
 
-    fn can_castle_long(&self) -> bool {
-        let (flag, mask, rook_home) = match self.white_to_move {
-            true  => (self.curr_flags().can_castle_wq(), Bitboard::WQ_MASK, Bitboard::WQ_ROOK),
-            false => (self.curr_flags().can_castle_bq(), Bitboard::BQ_MASK, Bitboard::BQ_ROOK)
+    pub fn can_castle_long(&mut self) -> bool {
+        let (flag, mask, rook_home, king_home) = match self.white_to_move {
+            true  => (self.curr_flags().can_castle_wq(), Bitboard::WQ_MASK, Bitboard::WQ_ROOK, Bitboard::W_KING),
+            false => (self.curr_flags().can_castle_bq(), Bitboard::BQ_MASK, Bitboard::BQ_ROOK, Bitboard::B_KING)
         };
-        let king_is_home = !(Bitboard::W_KING & self.friend() & self.piece_bb[KING_IDX]).is_empty();
-        let rook_is_home = !(rook_home        & self.friend() & self.piece_bb[ROOK_IDX]).is_empty();
         let none_in_mask = ((self.friend() | self.enemy()) & mask).is_empty();
+        let king_is_home = !(king_home & self.friend() & self.piece_bb[KING_IDX]).is_empty();
+        let rook_is_home = !(rook_home & self.friend() & self.piece_bb[ROOK_IDX]).is_empty();
 
-        flag && none_in_mask && king_is_home && rook_is_home
+        flag && none_in_mask && king_is_home && rook_is_home && !self.in_check()
+    }
+
+    pub fn is_white_to_move(&self) -> bool {
+        self.white_to_move
     }
 
     pub fn ep_target(&self) -> Option<Square> {
@@ -1208,6 +1208,15 @@ mod tests {
     }
 
     #[test]
+    fn test_castle_out_of_check() {
+        let mut board = Board::from_fen("r3k2r/8/2B5/8/8/8/8/2K5 b kq - 1 1").unwrap();
+        let legal_moves = board.legal_moves();
+
+        assert!(!legal_moves.contains(&Move::SHORT_CASTLE));
+        assert!(!legal_moves.contains(&Move::LONG_CASTLE));
+    }
+
+    #[test]
     fn test_unmake_move_legal() {
         let original = Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -").unwrap();
         let mut modified = original.clone();
@@ -1259,8 +1268,8 @@ mod tests {
             let output = duplicate.perft(i as u32 + 1);
             let elapsed = now.elapsed();
 
-            println!("{}ms elapsed at ply={}", elapsed.as_millis(), i);
-            println!("         |{:^9}|{:^9}|{:^9}|{:^9}|{:^9}", "depth", "captures", "eps", "castles", "promotes");
+            println!("{}ms elapsed at ply={}", elapsed.as_millis(), i+1);
+            println!("         |{:^9}|{:^9}|{:^9}|{:^9}|{:^9}", "nodes", "captures", "eps", "castles", "promotes");
             println!("Expected |{:<9}|{:<9}|{:<9}|{:<9}|{:<9}", expected.0, expected.1, expected.2, expected.3, expected.4);
             println!("Result   |{:<9}|{:<9}|{:<9}|{:<9}|{:<9}\n", output.0, output.1, output.2, output.3, output.4);
             assert_eq!(duplicate, *pos);
@@ -1268,14 +1277,29 @@ mod tests {
         }
     }
 
+    fn test_shallow_perft(pos: &mut Board, expected_output: Vec<(u128, u128, u128, u128, u128)>) {
+        for (i, expected) in expected_output.iter().enumerate() {
+            let mut duplicate = pos.clone();
+            let now = Instant::now();
+            let output = duplicate.perft(i as u32 + 1);
+            let elapsed = now.elapsed();
+
+            println!("{}ms elapsed at ply={}", elapsed.as_millis(), i+1);
+            assert_eq!(duplicate, *pos);
+            assert_eq!(output.0, expected.0);
+        }
+    }
+
+
+
     #[test]
     fn test_perft_start() {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Initial_Position
-        test_perft(
+        test_shallow_perft(
             &mut Board::STARTING_POSITION.clone(),
             vec![
-            /*     depth     captures      ep       castle    promote  */
+            /*     nodes     captures      ep       castle    promote  */
                 (20       , 0        , 0        , 0        , 0        ), 
                 (400      , 0        , 0        , 0        , 0        ), 
                 (8902     , 34       , 0        , 0        , 0        ), 
@@ -1289,10 +1313,10 @@ mod tests {
     fn test_perft_pos_2() {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_2
-        test_perft(
+        test_shallow_perft(
             &mut Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -").unwrap(),
             vec![
-            /*     depth     captures      ep       castle    promote  */
+            /*     nodes     captures      ep       castle    promote  */
                 (48       , 8        , 0        , 2        , 0        ), 
                 (2039     , 351      , 1        , 91       , 0        ), 
                 (97862    , 17102    , 45       , 3162     , 0        ), 
@@ -1306,10 +1330,10 @@ mod tests {
     fn test_perft_pos_3() {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_3
-        test_perft(
+        test_shallow_perft(
             &mut Board::from_fen("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -").unwrap(),
             vec![
-            /*     depth     captures      ep       castle    promote  */
+            /*     nodes     captures      ep       castle    promote  */
                 (14       , 1        , 0        , 0        , 0        ), 
                 (191      , 2812     , 209      , 0        , 0        ), 
                 (2812     , 209      , 2        , 0        , 0        ), 
@@ -1323,10 +1347,10 @@ mod tests {
     fn test_perft_pos_4() {
         // data found at:
         // https://www.chessprogramming.org/Perft_Results#Position_4
-        test_perft(
+        test_shallow_perft(
             &mut Board::from_fen("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1").unwrap(),
             vec![
-            /*     depth     captures      ep       castle    promote  */
+            /*     nodes     captures      ep       castle    promote  */
                 (6        , 0        , 0        , 0        , 0        ), 
                 (264      , 87       , 0        , 6        , 48       ), 
                 (9467     , 1021     , 4        , 0        , 120      ), 
@@ -1343,7 +1367,7 @@ mod tests {
         test_perft(
             &mut Board::from_fen("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8").unwrap(),
             vec![
-            /*     depth     captures      ep       castle    promote  */
+            /*     nodes     captures      ep       castle    promote  */
                 (         ,          ,          ,          ,          ), 
                 (         ,          ,          ,          ,          ), 
                 (         ,          ,          ,          ,          ), 
@@ -1360,7 +1384,7 @@ mod tests {
         test_perft(
             &mut Board::from_fen("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10").unwrap(),
             vec![
-            /*     depth     captures      ep       castle    promote  */
+            /*     nodes     captures      ep       castle    promote  */
                 (         ,          ,          ,          ,          ), 
                 (         ,          ,          ,          ,          ), 
                 (         ,          ,          ,          ,          ), 

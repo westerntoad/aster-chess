@@ -5,6 +5,7 @@ const ORIG_MASK: u16 = 0b1111_1100_0000_0000;
 const TARG_MASK: u16 = 0b0000_0011_1111_0000;
 const FLAG_MASK: u16 = 0b0000_0000_0000_1111;
 
+#[derive(Clone, PartialEq)]
 pub struct Move(u16);
 
 #[derive(Debug, PartialEq)]
@@ -80,7 +81,7 @@ impl Move {
     }
 
     pub fn is_promotion(&self) -> bool {
-        self.0 & 0b1100 == 0b1100
+        self.0 & 0b1000 == 0b1000
     }
 
     pub fn is_en_passant(&self) -> bool {
