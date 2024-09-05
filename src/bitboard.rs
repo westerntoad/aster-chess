@@ -179,11 +179,16 @@ impl Bitboard {
     pub const WQ_MASK: Bitboard =           Bitboard(0x000000000000000e);
     pub const BK_MASK: Bitboard =           Bitboard(0x6000000000000000);
     pub const BQ_MASK: Bitboard =           Bitboard(0x0e00000000000000);
+    pub const WQ_MASK_SLIDE: Bitboard =     Bitboard(0x000000000000000c);
+    pub const BQ_MASK_SLIDE: Bitboard =     Bitboard(0x0c00000000000000);
 
     pub const WK_ROOK: Bitboard =           Bitboard(0x0000000000000080);
     pub const WQ_ROOK: Bitboard =           Bitboard(0x0000000000000001);
     pub const BK_ROOK: Bitboard =           Bitboard(0x8000000000000000);
     pub const BQ_ROOK: Bitboard =           Bitboard(0x0100000000000000);
+
+    pub const W_KING: Bitboard =            Bitboard(0x0000000000000010);
+    pub const B_KING: Bitboard =            Bitboard(0x1000000000000000);
 
     pub const WK_ROOK_DEST: Bitboard =      Bitboard(0x0000000000000020);
     pub const WQ_ROOK_DEST: Bitboard =      Bitboard(0x0000000000000008);

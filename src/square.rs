@@ -37,6 +37,7 @@ impl Square {
             Some(v) => (v as u8) - 0x61,
             None => return Err("Invalid file parameter"),
         };
+
         let rank = match val.chars().nth(1) {
             Some(v) => (v as u8) - 0x30 - 1,
             None => return Err("Invalid rank parameter"),
@@ -46,7 +47,9 @@ impl Square {
     }
 
     pub fn from_bb(bb: Bitboard) -> Result<Self, &'static str> {
-        if bb.is_one() {
+        if bb.is_empty() {
+            Err("Bitboard is empty")
+        } else if bb.is_one() {
             Ok(Square(63 - bb.val().leading_zeros() as u8))
         } else {
             Err("Bitboard is overpopulated")
