@@ -1,3 +1,4 @@
+use crate::square::Square;
 use std::{ 
     fmt,
     ops::BitAnd,
@@ -59,9 +60,9 @@ impl Bitboard {
 }
 
 impl Iterator for Bitboard {
-    type Item = Bitboard;
+    type Item = Square;
 
-    fn next(&mut self) -> Option<Self> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.0 == 0 { return None; };
 
         let ls1b = self.0 & (!self.0 + 1);
@@ -137,18 +138,6 @@ impl fmt::Debug for Bitboard {
         write!(f, "{}", output)
     }
 }
-//impl fmt::Debug for Bitboard {
-//    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//        let mut output = String::new();
-//        
-//        for i in 1..=8 {
-//            let val = (self.0 >> 64 - 8 * i) % 0x100;
-//            output.push_str(format!("{:08b}\n", val).as_str());
-//        }
-//
-//        write!(f, "{}", output)
-//    }
-//}
 
 impl Bitboard {
     pub const EMPTY: Bitboard =             Bitboard(0);

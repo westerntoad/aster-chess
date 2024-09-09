@@ -1,12 +1,66 @@
 use crate::bitboard::Bitboard;
+use crate::square::Square;
 
-pub fn p_move_gen(
-    orig: Bitboard,
+#[derive(Debug, PartialEq)]
+pub enum Piece {
+    NoPiece = 0b000,
+    Pawn = 0b001,
+    Knight = 0b010,
+    Bishop = 0b011,
+    Rook = 0b100,
+    Queen = 0b101,
+    King = 0b110
+}
+
+impl Piece {
+    pub fn new(val: u8) -> Result<Self, &'static str> {
+        match val {
+            0b000 => Ok(Piece::NoPiece),
+            0b001 => Ok(Piece::Pawn),
+            0b010 => Ok(Piece::Knight),
+            0b011 => Ok(Piece::Bishop),
+            0b100 => Ok(Piece::Rook),
+            0b101 => Ok(Piece::Queen),
+            0b110 => Ok(Piece::King),
+            _ => Err("Invalid piece creation range.")
+        }
+    }
+
+    pub fn val(&self) -> u8 {
+        match self {
+            Piece::NoPiece => 0b000,
+            Piece::Pawn    => 0b001,
+            Piece::Knight  => 0b010,
+            Piece::Bishop  => 0b011,
+            Piece::Rook    => 0b100,
+            Piece::Queen   => 0b101,
+            Piece::King    => 0b110
+        }
+    }
+
+    pub fn is_piece(&self) -> bool {
+        match self {
+            Piece::NoPiece => false,
+            _ => true
+        }
+    }
+    
+    pub fn index(&self) -> usize {
+        match self {
+            Piece::NoPiece => panic!("Cannot index by no piece"),
+            _ => self.val() as usize - 1
+        }
+    }
+}
+
+pub fn p_moves(
+    orig: Square,
     is_white: bool,
     friend: Bitboard,
     enemy: Bitboard,
     en_passant: Bitboard
 ) -> Bitboard {
+    let orig = orig.bb();
     let forward = match is_white {
         true  => orig.nort_one(),
         false => orig.sout_one()
@@ -27,7 +81,8 @@ pub fn p_move_gen(
     attacks | movement
 }
 
-pub fn n_move_gen(orig: Bitboard) -> Bitboard {
+pub fn n_moves(orig: Square) -> Bitboard {
+    let orig = orig.bb();
     let mut horizontal = orig.east_one().east_one();
     horizontal |= orig.west_one().west_one();
     horizontal = horizontal.nort_one() | horizontal.sout_one();
@@ -39,14 +94,16 @@ pub fn n_move_gen(orig: Bitboard) -> Bitboard {
     horizontal | vertical
 }
 
-pub fn k_move_gen(orig: Bitboard) -> Bitboard {
+pub fn k_moves(orig: Square) -> Bitboard {
+    let orig = orig.bb();
     let attacks = orig.nort_one() | orig.sout_one();
 
     attacks | attacks.west_one() | attacks.east_one() | orig.west_one() | orig.east_one()
 }
 
 
-pub fn b_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
+pub fn b_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+    let orig = orig.bb();
     let mut attacks = Bitboard::EMPTY;
 
     let mut idx = orig.nort_one().east_one();
@@ -88,7 +145,8 @@ pub fn b_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
     attacks
 }
 
-pub fn r_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
+pub fn r_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+    let orig = orig.bb();
     let mut attacks = Bitboard::EMPTY;
 
     let mut nort_idx = orig.nort_one();
@@ -130,8 +188,8 @@ pub fn r_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
     attacks
 }
 
-pub fn q_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
-    b_move_gen(orig, blockers) | r_move_gen(orig, blockers)
+pub fn q_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+    b_moves(orig, blockers) | r_moves(orig, blockers)
 }
 
 
@@ -141,8 +199,8 @@ mod tests {
     use crate::square::*;
 
     #[test]
-    fn test_n_move_gen() {
-        let output = n_move_gen(Square::E4.bb());
+    fn test_n_moves() {
+        let output = n_moves(Square::E4);
         let expected_output = Bitboard::new(0x0000284400442800);
 
 
@@ -150,32 +208,32 @@ mod tests {
     }
 
     #[test]
-    fn test_n_move_gen_edge_close() {
-        let output = n_move_gen(Square::A4.bb());
+    fn test_n_moves_edge_close() {
+        let output = n_moves(Square::A4);
         let expected_output = Bitboard::new(0x0000020400040200);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
-    fn test_n_move_gen_edge_far() {
-        let output = n_move_gen(Square::G5.bb());
+    fn test_n_moves_edge_far() {
+        let output = n_moves(Square::G5);
         let expected_output = Bitboard::new(0x00a0100010a00000);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
-    fn test_n_move_gen_corner() {
-        let output = n_move_gen(Square::A1.bb());
+    fn test_n_moves_corner() {
+        let output = n_moves(Square::A1);
         let expected_output = Bitboard::new(0x0000000000020400);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
-    fn test_k_move_gen() {
-        let output = k_move_gen(Square::E2.bb());
+    fn test_k_moves() {
+        let output = k_moves(Square::E2);
         let expected_output = Bitboard::new(0x0000000000382838);
 
 
@@ -183,16 +241,16 @@ mod tests {
     }
 
     #[test]
-    fn test_k_move_gen_edge() {
-        let output = k_move_gen(Square::A4.bb());
+    fn test_k_moves_edge() {
+        let output = k_moves(Square::A4);
         let expected_output = Bitboard::new(0x0000000302030000);
 
         assert_eq!(output, expected_output);
     }
 
     #[test]
-    fn test_k_move_gen_corner() {
-        let output = k_move_gen(Square::H8.bb());
+    fn test_k_moves_corner() {
+        let output = k_moves(Square::H8);
         let expected_output = Bitboard::new(0x40c0000000000000);
 
         assert_eq!(output, expected_output);

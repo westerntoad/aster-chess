@@ -3,14 +3,15 @@
 
 mod bitboard;
 mod board;
-mod legal_moves;
+mod pieces;
 mod movement;
 mod square;
 
+use std::time::Instant;
 use std::io;
 use crate::bitboard::*;
 use crate::board::*;
-use crate::legal_moves::*;
+use crate::pieces::*;
 use crate::movement::*;
 use crate::square::*;
 
@@ -22,8 +23,10 @@ fn print_legal_moves(board: &Board) {
 }
 
 fn print_perft_divide(board: &Board, depth: u32) {
+    let now = Instant::now();
     let perfts = board.clone().perft_divide(depth);
     let mut total: u128 = 0;
+    let elapsed = now.elapsed();
 
     println!("{:^58}", format!("Printing divided perft at {}", depth));
     println!(" {:^6} ║ {:^34} ║ {:^9} ", "move #", "move", "node count");
@@ -36,6 +39,7 @@ fn print_perft_divide(board: &Board, depth: u32) {
     }
     println!("═{:═^6}═╩═{:═^34}═╬═{:═^9}══", "", "", "");
     println!(" {:>43} ║ {:<9}", "Total", total);
+    println!("\n{}ms elapsed", elapsed.as_millis());
 }
 
 fn explore_at_depth(mut board: Board, mut depth: u32) {
@@ -136,13 +140,8 @@ fn main() -> std::io::Result<()> {
     //println!("{}\n", board);
     //print_legal_moves(board);
 
-    let mut board = Board::from_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ").unwrap();
-    println!("{}", board.in_check());
-    board.in_check();
-    board.make_move(&Move::new(Square::A2, Square::A3, Flag::Quiet));
-    board.make_move(&Move::new(Square::D7, Square::D6, Flag::Quiet));
-    board.make_move(&Move::new(Square::E2, Square::B5, Flag::Quiet));
-    explore_at_depth(board, 1);
+    let mut board = Board::STARTING_POSITION;
+    explore_at_depth(board, 4);
 
 
     //board.make_move(&Move::new(Square::F1, Square::F2, Flag::Quiet));
