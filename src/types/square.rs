@@ -29,6 +29,10 @@ impl Square {
         }
     }
 
+    pub fn new_unchecked(val: u8) -> Self {
+        Self(val)
+    }
+
     /// generates a square from a designated `rank` and `file` index. 0,0 is bottom-left.
     pub fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
         Self::new(rank * 8 + file)

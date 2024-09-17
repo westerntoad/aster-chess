@@ -187,8 +187,10 @@ impl Board {
             Some(val) => val.bb(),
             None      => Bitboard::EMPTY
         };
-        for pawn_bb in friend & self.piece_bb[PAWN_IDX] {
-            for attack_bb in p_move_gen(pawn_bb, self.white_to_move, friend, enemy, en_passant_bb) {
+        for pawn_sq in friend & self.piece_bb[PAWN_IDX] {
+            let pawn_bb = pawn_sq.bb();
+            for attack_sq in p_move_gen(pawn_bb, self.white_to_move, friend, enemy, en_passant_bb) {
+                let attack_bb = attack_sq.bb();
                 let flags: Vec<Flag> = if !(attack_bb & (Bitboard::RANK_1 | Bitboard::RANK_8)).is_empty() {
                     if !(attack_bb & enemy).is_empty() {
                         vec![
@@ -236,8 +238,10 @@ impl Board {
         let friend = self.color_bb[!(self.white_to_move) as usize];
         let enemy = self.color_bb[self.white_to_move as usize];
 
-        for knight_bb in friend & self.piece_bb[KNIGHT_IDX] {
-            for attack_bb in n_move_gen(knight_bb) & !friend {
+        for knight_sq in friend & self.piece_bb[KNIGHT_IDX] {
+            let knight_bb = knight_sq.bb();
+            for attack_sq in n_move_gen(knight_bb) & !friend {
+                let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
                     Square::from_bb(knight_bb).unwrap(),
                     Square::from_bb(attack_bb).unwrap(),
@@ -258,8 +262,10 @@ impl Board {
         let friend = self.color_bb[!(self.white_to_move) as usize];
         let enemy = self.color_bb[self.white_to_move as usize];
 
-        for bishop_bb in friend & self.piece_bb[BISHOP_IDX] {
-            for attack_bb in b_move_gen(bishop_bb, friend | enemy) & !friend {
+        for bishop_sq in friend & self.piece_bb[BISHOP_IDX] {
+            let bishop_bb = bishop_sq.bb();
+            for attack_sq in b_move_gen(bishop_bb, friend | enemy) & !friend {
+                let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
                     Square::from_bb(bishop_bb).unwrap(),
                     Square::from_bb(attack_bb).unwrap(),
@@ -280,8 +286,10 @@ impl Board {
         let friend = self.color_bb[!(self.white_to_move) as usize];
         let enemy = self.color_bb[self.white_to_move as usize];
 
-        for rook_bb in friend & self.piece_bb[ROOK_IDX] {
-            for attack_bb in r_move_gen(rook_bb, friend | enemy) & !friend {
+        for rook_sq in friend & self.piece_bb[ROOK_IDX] {
+            let rook_bb = rook_sq.bb();
+            for attack_sq in r_move_gen(rook_bb, friend | enemy) & !friend {
+                let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
                     Square::from_bb(rook_bb).unwrap(),
                     Square::from_bb(attack_bb).unwrap(),
@@ -302,8 +310,10 @@ impl Board {
         let friend = self.color_bb[!(self.white_to_move) as usize];
         let enemy = self.color_bb[self.white_to_move as usize];
 
-        for queen_bb in friend & self.piece_bb[QUEEN_IDX] {
-            for attack_bb in q_move_gen(queen_bb, friend | enemy) & !friend {
+        for queen_sq in friend & self.piece_bb[QUEEN_IDX] {
+            let queen_bb = queen_sq.bb();
+            for attack_sq in q_move_gen(queen_bb, friend | enemy) & !friend {
+                let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
                     Square::from_bb(queen_bb).unwrap(),
                     Square::from_bb(attack_bb).unwrap(),
@@ -324,8 +334,10 @@ impl Board {
         let friend = self.color_bb[!(self.white_to_move) as usize];
         let enemy = self.color_bb[self.white_to_move as usize];
 
-        for king_bb in friend & self.piece_bb[KING_IDX] {
-            for attack_bb in k_move_gen(king_bb) & !friend {
+        for king_sq in friend & self.piece_bb[KING_IDX] {
+            let king_bb = king_sq.bb();
+            for attack_sq in k_move_gen(king_bb) & !friend {
+                let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
                     Square::from_bb(king_bb).unwrap(),
                     Square::from_bb(attack_bb).unwrap(),

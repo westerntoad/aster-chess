@@ -7,6 +7,7 @@ use std::{
     ops::BitXor,
     ops::Not
 };
+use crate::types::square::Square;
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Bitboard(u64);
@@ -56,18 +57,24 @@ impl Bitboard {
     pub fn file(&self) -> u64 {
         (self.0.ilog2() % 8).into()
     }
+    
+    pub fn pop_lsb(&mut self) -> Square {
+        let val = self.0.trailing_zeros() as u8;
+        self.0 &= self.0 - 1;
+
+        Square::new_unchecked(val)
+    }
 }
 
 impl Iterator for Bitboard {
-    type Item = Bitboard;
+    type Item = Square;
 
-    fn next(&mut self) -> Option<Self> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.0 == 0 { return None; };
+        //let ls1b = self.0 & (!self.0 + 1);
+        //self.0 = self.0 & !ls1b;
 
-        let ls1b = self.0 & (!self.0 + 1);
-        self.0 = self.0 & !ls1b;
-
-        Some(Bitboard(ls1b))
+        Some(self.pop_lsb())
     }
 }
 
