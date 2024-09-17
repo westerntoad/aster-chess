@@ -1,4 +1,4 @@
-use crate::bitboard::Bitboard;
+use crate::types::bitboard::Bitboard;
 
 pub fn p_move_gen(
     orig: Bitboard,

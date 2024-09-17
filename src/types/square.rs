@@ -15,6 +15,8 @@
 use std::fmt;
 use super::bitboard::Bitboard;
 
+pub const NUM: usize = 64;
+
 #[derive(Copy, Clone, PartialEq)]
 pub struct Square(u8);
 
