@@ -16,11 +16,11 @@ use std::fmt;
 use super::bitboard::Bitboard;
 
 #[derive(Copy, Clone, PartialEq)]
-pub struct Square(u8);
+pub struct Square(pub u8);
 
 #[allow(dead_code)]
 impl Square {
-    pub fn new(val: u8) -> Result<Self, &'static str> {
+    pub const fn new(val: u8) -> Result<Self, &'static str> {
         match val {
             0..=63 => Ok(Self(val)),
             _ => Err("Invalid square index."),
@@ -28,7 +28,10 @@ impl Square {
     }
 
     /// generates a square from a designated `rank` and `file` index. 0,0 is bottom-left.
-    pub fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
+    pub const fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
+        if rank > 8 { return Err("Invalid rank index."); }
+        if file > 8 { return Err("Invalid file index."); }
+
         Self::new(rank * 8 + file)
     }
 
@@ -46,7 +49,19 @@ impl Square {
         Self::from_coord(rank, file)
     }
 
-    pub fn from_bb(bb: Bitboard) -> Result<Self, &'static str> {
+    pub const fn try_offset(&self, delta_rank: i8, delta_file: i8) -> Option<Self> {
+        let rank = self.rank() as i8 + delta_rank;
+        if rank < 0 { return None; }
+        let file = self.file() as i8 + delta_file;
+        if file < 0 { return None; }
+
+        match Self::from_coord(rank as u8, file as u8) {
+            Ok(v)  => Some(v),
+            Err(_) => None
+        }
+    }
+
+    /*pub fn from_bb(bb: Bitboard) -> Result<Self, &'static str> {
         if bb.is_empty() {
             Err("Bitboard is empty")
         } else if bb.is_one() {
@@ -54,9 +69,9 @@ impl Square {
         } else {
             Err("Bitboard is overpopulated")
         }
-    }
+    }*/
 
-    pub fn bb(&self) -> Bitboard {
+    pub const fn bb(&self) -> Bitboard {
         Bitboard::new(u64::pow(2, self.0 as u32))
     }
 
@@ -64,11 +79,11 @@ impl Square {
         self.0
     }
     
-    pub fn rank(&self) -> u8 {
+    pub const fn rank(&self) -> u8 {
         self.0 / 8
     }
     
-    pub fn file(&self) -> u8 {
+    pub const fn file(&self) -> u8 {
         self.0 % 8
     }
 }
@@ -269,6 +284,20 @@ mod tests {
         assert_eq!(Square::A4.file(), 0);
         assert_eq!(Square::H6.file(), 7);
     }
+
+    /*#[test]
+    fn test_directional_circle() {
+        let mut bb: Bitboard = Square::D4.bb();
+
+        bb = bb.nort_one();
+        assert_eq!(bb, Square::D5.bb());
+        bb = bb.east_one();
+        assert_eq!(bb, Square::E5.bb());
+        bb = bb.sout_one();
+        assert_eq!(bb, Square::E4.bb());
+        bb = bb.west_one();
+        assert_eq!(bb, Square::D4.bb());
+    }*/
 
     #[test]
     fn test_debug_print() {

@@ -10,11 +10,11 @@ use std::{
 };
 
 #[derive(Copy, Clone, PartialEq)]
-pub struct Bitboard(u64);
+pub struct Bitboard(pub u64);
 
 #[allow(dead_code)]
 impl Bitboard {
-    pub fn new(val: u64) -> Bitboard {
+    pub const fn new(val: u64) -> Bitboard {
         Self(val)
     }
 
@@ -23,14 +23,14 @@ impl Bitboard {
     }
 
     pub fn is_empty(&self) -> bool {
-        &self.0 == &0
+        self.0 == 0
     }
 
     pub fn is_one(&self) -> bool {
         self.0.is_power_of_two()
     }
 
-    pub fn nort_one(&self) -> Bitboard {
+    /*pub fn nort_one(&self) -> Bitboard {
         Self(&self.0 << 8)
     }
     
@@ -44,7 +44,7 @@ impl Bitboard {
 
     pub fn west_one(&self) -> Bitboard {
         Self(&self.0 >> 1) & !Self::H_FILE
-    }
+    }*/
 
     pub const fn index(&self) -> usize {
         self.0.trailing_zeros() as usize
@@ -57,6 +57,19 @@ impl Bitboard {
     pub fn file(&self) -> u64 {
         (self.0.ilog2() % 8).into()
     }
+
+    pub fn lsb(&self) -> Square {
+        let val = self.0.trailing_zeros() as u8;
+
+        Square(val)
+    }
+
+    pub fn pop_lsb(&mut self) -> Square {
+        let val = self.0.trailing_zeros() as u8;
+        self.0 &= self.0 - 1;
+
+        Square(val)
+    }
 }
 
 impl Iterator for Bitboard {
@@ -64,11 +77,10 @@ impl Iterator for Bitboard {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 == 0 { return None; };
+        //let ls1b = self.0 & (!self.0 + 1);
+        //self.0 = self.0 & !ls1b;
 
-        let ls1b = self.0 & (!self.0 + 1);
-        self.0 = self.0 & !ls1b;
-
-        Some(Bitboard(ls1b))
+        Some(self.pop_lsb())
     }
 }
 
@@ -197,25 +209,5 @@ mod tests {
     use super::*;
     use crate::square::*;
 
-    #[test]
-    fn test_directional_circle() {
-        let mut bb: Bitboard = Square::D4.bb();
-
-        bb = bb.nort_one();
-        assert_eq!(bb, Square::D5.bb());
-        bb = bb.east_one();
-        assert_eq!(bb, Square::E5.bb());
-        bb = bb.sout_one();
-        assert_eq!(bb, Square::E4.bb());
-        bb = bb.west_one();
-        assert_eq!(bb, Square::D4.bb());
-    }
-
-    #[test]
-    fn test_directional_overflow() {
-        assert_eq!(Square::B8.bb().nort_one(), Bitboard::EMPTY);
-        assert_eq!(Square::H5.bb().east_one(), Bitboard::EMPTY);
-        assert_eq!(Square::D1.bb().sout_one(), Bitboard::EMPTY);
-        assert_eq!(Square::A2.bb().west_one(), Bitboard::EMPTY);
-    }
+    // TODO
 }

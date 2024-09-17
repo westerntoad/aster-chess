@@ -53,7 +53,72 @@ impl Piece {
     }
 }
 
-pub fn p_moves(
+pub const KNIGHT_TABLE: [Bitboard; 64] = {
+    // this table initialization method took heavy inspiration from analog-hors/cozy-chess
+    // https://github.com/analog-hors/cozy-chess/blob/1d8a04d1510071931132ce11e988ced0d41807c8/cozy-chess/src/moves.rs#L261
+    let mut table: [Bitboard; 64] = [Bitboard::EMPTY; 64];
+    let deltas: [(i8, i8); 8] = [
+        (-1,  2), ( 1,  2),
+        ( 2,  1), ( 2, -1),
+        ( 1, -2), (-1, -2),
+        (-2, -1), (-2,  1)
+    ];
+
+    let mut i = 0u8;
+    while i < 64 {
+        let origin_sq = Square(i);
+        let mut bb = Bitboard::EMPTY;
+
+        let mut delta_idx = 0;
+        while delta_idx < 8 {
+            let (rank, file) = deltas[delta_idx];
+            if let Some(sq) = origin_sq.try_offset(rank, file) {
+                bb.0 |= sq.bb().0;
+            }
+
+            delta_idx += 1;
+        }
+
+        table[i as usize] = bb;
+        i += 1;
+    }
+
+    table
+};
+
+pub const KING_TABLE: [Bitboard; 64] = {
+    // this table initialization method took heavy inspiration from analog-hors/cozy-chess
+    // https://github.com/analog-hors/cozy-chess/blob/1d8a04d1510071931132ce11e988ced0d41807c8/cozy-chess/src/moves.rs#L313
+    let mut table: [Bitboard; 64] = [Bitboard::EMPTY; 64];
+    let deltas: [(i8, i8); 9] = [
+        (-1, -1), (-1,  0), (-1,  1),
+        ( 0, -1), ( 0,  0), ( 0,  1),
+        ( 1, -1), ( 1,  0), ( 1,  1)
+    ];
+
+    let mut i = 0u8;
+    while i < 64 {
+        let origin_sq = Square(i);
+        let mut bb = Bitboard::EMPTY;
+
+        let mut delta_idx = 0;
+        while delta_idx < 9 {
+            let (rank, file) = deltas[delta_idx];
+            if let Some(sq) = origin_sq.try_offset(rank, file) {
+                bb.0 |= sq.bb().0;
+            }
+
+            delta_idx += 1;
+        }
+
+        table[i as usize] = bb;
+        i += 1;
+    }
+
+    table
+};
+
+/*pub fn p_moves(
     orig: Square,
     is_white: bool,
     friend: Bitboard,
@@ -79,9 +144,9 @@ pub fn p_moves(
     };
 
     attacks | movement
-}
+}*/
 
-pub fn n_moves(orig: Square) -> Bitboard {
+/*pub fn n_moves(orig: Square) -> Bitboard {
     let orig = orig.bb();
     let mut horizontal = orig.east_one().east_one();
     horizontal |= orig.west_one().west_one();
@@ -92,17 +157,25 @@ pub fn n_moves(orig: Square) -> Bitboard {
     vertical = vertical.east_one() | vertical.west_one();
 
     horizontal | vertical
+}*/
+
+pub fn n_moves(orig: Square) -> Bitboard {
+    KNIGHT_TABLE[orig.0 as usize]
 }
 
-pub fn k_moves(orig: Square) -> Bitboard {
+/*pub fn k_moves(orig: Square) -> Bitboard {
     let orig = orig.bb();
     let attacks = orig.nort_one() | orig.sout_one();
 
     attacks | attacks.west_one() | attacks.east_one() | orig.west_one() | orig.east_one()
+}*/
+
+pub fn k_moves(orig: Square) -> Bitboard {
+    KING_TABLE[orig.0 as usize]
 }
 
 
-pub fn b_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+/*pub fn b_moves(orig: Square, blockers: Bitboard) -> Bitboard {
     let orig = orig.bb();
     let mut attacks = Bitboard::EMPTY;
 
@@ -143,9 +216,9 @@ pub fn b_moves(orig: Square, blockers: Bitboard) -> Bitboard {
     }
 
     attacks
-}
+}*/
 
-pub fn r_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+/*pub fn r_moves(orig: Square, blockers: Bitboard) -> Bitboard {
     let orig = orig.bb();
     let mut attacks = Bitboard::EMPTY;
 
@@ -183,6 +256,56 @@ pub fn r_moves(orig: Square, blockers: Bitboard) -> Bitboard {
             break;
         }
         west_idx = west_idx.west_one();
+    }
+
+    attacks
+}*/
+
+pub fn r_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+    let mut attacks = Bitboard::EMPTY;
+    let rays = [(0, 1),  (1, 0), (0, -1), (-1, 0)];
+
+    for ray in rays {
+        let mut curr_sq = orig;
+        loop {
+            match curr_sq.try_offset(ray.0, ray.1) {
+                Some(v) => {
+                    let dest = v.bb();
+                    attacks |= dest;
+                    if (dest & blockers).is_empty() {
+                        curr_sq = v;
+                    } else {
+                        break;
+                    }
+                },
+                None => break
+            }
+        }
+    }
+
+    attacks
+}
+
+pub fn b_moves(orig: Square, blockers: Bitboard) -> Bitboard {
+    let mut attacks = Bitboard::EMPTY;
+    let rays = [(1, 1),  (1, -1), (-1, 1), (-1, -1)];
+
+    for ray in rays {
+        let mut curr_sq = orig;
+        loop {
+            match curr_sq.try_offset(ray.0, ray.1) {
+                Some(v) => {
+                    let dest = v.bb();
+                    attacks |= dest;
+                    if (dest & blockers).is_empty() {
+                        curr_sq = v;
+                    } else {
+                        break;
+                    }
+                },
+                None => break
+            }
+        }
     }
 
     attacks

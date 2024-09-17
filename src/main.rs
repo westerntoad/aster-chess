@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 
 mod bitboard;
-mod board;
+//mod board;
 mod pieces;
 mod movement;
 mod square;
@@ -10,12 +10,12 @@ mod square;
 use std::time::Instant;
 use std::io;
 use crate::bitboard::*;
-use crate::board::*;
+//use crate::board::*;
 use crate::pieces::*;
 use crate::movement::*;
 use crate::square::*;
 
-fn print_legal_moves(board: &Board) {
+/*fn print_legal_moves(board: &Board) {
     let legal_moves = board.clone().legal_moves();
     for (i, action) in legal_moves.iter().enumerate() {
         println!("{: <6}{}", i+1, action);
@@ -60,7 +60,7 @@ fn explore_at_depth(mut board: Board, mut depth: u32) {
         let num = input.trim().parse::<usize>().unwrap();
         board.make_move(&legal_moves[num - 1]);
     }
-}
+}*/
 
 fn main() -> std::io::Result<()> {
     //println!("{:#?}", Board::from_fen("k7/8/3qb3/8/3N4/1pp5/8/7K w - - 0 1").unwrap());
@@ -140,8 +140,8 @@ fn main() -> std::io::Result<()> {
     //println!("{}\n", board);
     //print_legal_moves(board);
 
-    let mut board = Board::STARTING_POSITION;
-    explore_at_depth(board, 4);
+    //let mut board = Board::STARTING_POSITION;
+    //explore_at_depth(board, 4);
 
 
     //board.make_move(&Move::new(Square::F1, Square::F2, Flag::Quiet));
