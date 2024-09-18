@@ -1,19 +1,14 @@
 #![allow(unused_imports)]
 #![allow(dead_code)]
 
-mod board;
-mod legal_moves;
-mod movement;
-mod types;
-
 use std::io;
-use crate::types::{
+use aster::types::{
     bitboard::*,
     square::*
 };
-use crate::board::*;
-use crate::legal_moves::*;
-use crate::movement::*;
+use aster::board::*;
+use aster::legal_moves::*;
+use aster::movement::*;
 
 fn print_legal_moves(board: &Board) {
     let legal_moves = board.clone().legal_moves();
