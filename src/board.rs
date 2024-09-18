@@ -239,11 +239,10 @@ impl Board {
         let enemy = self.color_bb[self.white_to_move as usize];
 
         for knight_sq in friend & self.piece_bb[KNIGHT_IDX] {
-            let knight_bb = knight_sq.bb();
-            for attack_sq in n_move_gen(knight_bb) & !friend {
+            for attack_sq in n_move_gen(knight_sq) & !friend {
                 let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
-                    Square::from_bb(knight_bb).unwrap(),
+                    knight_sq,
                     Square::from_bb(attack_bb).unwrap(),
                     if (attack_bb & enemy).is_empty() {
                         Flag::Quiet
@@ -263,11 +262,10 @@ impl Board {
         let enemy = self.color_bb[self.white_to_move as usize];
 
         for bishop_sq in friend & self.piece_bb[BISHOP_IDX] {
-            let bishop_bb = bishop_sq.bb();
-            for attack_sq in b_move_gen(bishop_bb, friend | enemy) & !friend {
+            for attack_sq in b_move_gen(bishop_sq, friend | enemy) & !friend {
                 let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
-                    Square::from_bb(bishop_bb).unwrap(),
+                    bishop_sq,
                     Square::from_bb(attack_bb).unwrap(),
                     if (attack_bb & enemy).is_empty() {
                         Flag::Quiet
@@ -287,11 +285,10 @@ impl Board {
         let enemy = self.color_bb[self.white_to_move as usize];
 
         for rook_sq in friend & self.piece_bb[ROOK_IDX] {
-            let rook_bb = rook_sq.bb();
-            for attack_sq in r_move_gen(rook_bb, friend | enemy) & !friend {
+            for attack_sq in r_move_gen(rook_sq, friend | enemy) & !friend {
                 let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
-                    Square::from_bb(rook_bb).unwrap(),
+                    rook_sq,
                     Square::from_bb(attack_bb).unwrap(),
                     if (attack_bb & enemy).is_empty() {
                         Flag::Quiet
@@ -311,11 +308,10 @@ impl Board {
         let enemy = self.color_bb[self.white_to_move as usize];
 
         for queen_sq in friend & self.piece_bb[QUEEN_IDX] {
-            let queen_bb = queen_sq.bb();
-            for attack_sq in q_move_gen(queen_bb, friend | enemy) & !friend {
+            for attack_sq in q_move_gen(queen_sq, friend | enemy) & !friend {
                 let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
-                    Square::from_bb(queen_bb).unwrap(),
+                    queen_sq,
                     Square::from_bb(attack_bb).unwrap(),
                     if (attack_bb & enemy).is_empty() {
                         Flag::Quiet
@@ -335,11 +331,10 @@ impl Board {
         let enemy = self.color_bb[self.white_to_move as usize];
 
         for king_sq in friend & self.piece_bb[KING_IDX] {
-            let king_bb = king_sq.bb();
-            for attack_sq in k_move_gen(king_bb) & !friend {
+            for attack_sq in k_move_gen(king_sq) & !friend {
                 let attack_bb = attack_sq.bb();
                 moves.push(Move::new(
-                    Square::from_bb(king_bb).unwrap(),
+                    king_sq,
                     Square::from_bb(attack_bb).unwrap(),
                     if (attack_bb & enemy).is_empty() {
                         Flag::Quiet

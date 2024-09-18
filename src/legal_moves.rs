@@ -1,4 +1,7 @@
-use crate::types::bitboard::Bitboard;
+use crate::types::{
+    bitboard::Bitboard,
+    square::Square
+};
 
 pub fn p_move_gen(
     orig: Bitboard,
@@ -27,7 +30,8 @@ pub fn p_move_gen(
     attacks | movement
 }
 
-pub fn n_move_gen(orig: Bitboard) -> Bitboard {
+pub fn n_move_gen(orig: Square) -> Bitboard {
+    let orig = orig.bb();
     let mut horizontal = orig.east_one().east_one();
     horizontal |= orig.west_one().west_one();
     horizontal = horizontal.nort_one() | horizontal.sout_one();
@@ -39,14 +43,16 @@ pub fn n_move_gen(orig: Bitboard) -> Bitboard {
     horizontal | vertical
 }
 
-pub fn k_move_gen(orig: Bitboard) -> Bitboard {
+pub fn k_move_gen(orig: Square) -> Bitboard {
+    let orig = orig.bb();
     let attacks = orig.nort_one() | orig.sout_one();
 
     attacks | attacks.west_one() | attacks.east_one() | orig.west_one() | orig.east_one()
 }
 
 
-pub fn b_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
+pub fn b_move_gen(orig: Square, blockers: Bitboard) -> Bitboard {
+    let orig = orig.bb();
     let mut attacks = Bitboard::EMPTY;
 
     let mut idx = orig.nort_one().east_one();
@@ -88,7 +94,8 @@ pub fn b_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
     attacks
 }
 
-pub fn r_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
+pub fn r_move_gen(orig: Square, blockers: Bitboard) -> Bitboard {
+    let orig = orig.bb();
     let mut attacks = Bitboard::EMPTY;
 
     let mut nort_idx = orig.nort_one();
@@ -130,7 +137,7 @@ pub fn r_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
     attacks
 }
 
-pub fn q_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
+pub fn q_move_gen(orig: Square, blockers: Bitboard) -> Bitboard {
     b_move_gen(orig, blockers) | r_move_gen(orig, blockers)
 }
 
@@ -138,11 +145,11 @@ pub fn q_move_gen(orig: Bitboard, blockers: Bitboard) -> Bitboard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::square::*;
+    use crate::types::square::*;
 
     #[test]
     fn test_n_move_gen() {
-        let output = n_move_gen(Square::E4.bb());
+        let output = n_move_gen(Square::E4);
         let expected_output = Bitboard::new(0x0000284400442800);
 
 
@@ -151,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_n_move_gen_edge_close() {
-        let output = n_move_gen(Square::A4.bb());
+        let output = n_move_gen(Square::A4);
         let expected_output = Bitboard::new(0x0000020400040200);
 
         assert_eq!(output, expected_output);
@@ -159,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_n_move_gen_edge_far() {
-        let output = n_move_gen(Square::G5.bb());
+        let output = n_move_gen(Square::G5);
         let expected_output = Bitboard::new(0x00a0100010a00000);
 
         assert_eq!(output, expected_output);
@@ -167,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_n_move_gen_corner() {
-        let output = n_move_gen(Square::A1.bb());
+        let output = n_move_gen(Square::A1);
         let expected_output = Bitboard::new(0x0000000000020400);
 
         assert_eq!(output, expected_output);
@@ -175,7 +182,7 @@ mod tests {
 
     #[test]
     fn test_k_move_gen() {
-        let output = k_move_gen(Square::E2.bb());
+        let output = k_move_gen(Square::E2);
         let expected_output = Bitboard::new(0x0000000000382838);
 
 
@@ -184,7 +191,7 @@ mod tests {
 
     #[test]
     fn test_k_move_gen_edge() {
-        let output = k_move_gen(Square::A4.bb());
+        let output = k_move_gen(Square::A4);
         let expected_output = Bitboard::new(0x0000000302030000);
 
         assert_eq!(output, expected_output);
@@ -192,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_k_move_gen_corner() {
-        let output = k_move_gen(Square::H8.bb());
+        let output = k_move_gen(Square::H8);
         let expected_output = Bitboard::new(0x40c0000000000000);
 
         assert_eq!(output, expected_output);

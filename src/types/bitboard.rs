@@ -213,7 +213,7 @@ impl Bitboard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::square::*;
+    use crate::types::square::*;
 
     #[test]
     fn test_directional_circle() {
