@@ -4,11 +4,10 @@
 use std::io;
 use aster::types::{
     bitboard::*,
-    square::*
+    square::*,
+    movement::*
 };
 use aster::board::*;
-use aster::legal_moves::*;
-use aster::movement::*;
 
 fn print_legal_moves(board: &Board) {
     let legal_moves = board.clone().legal_moves();

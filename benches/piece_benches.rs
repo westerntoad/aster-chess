@@ -13,7 +13,7 @@ use aster::types::{
     square::Square,
     piece::Piece
 };
-use aster::legal_moves::{
+use aster::board::move_gen::{
     n_move_gen,
     k_move_gen,
     b_move_gen,
@@ -28,10 +28,10 @@ const LOOKUP_VALUES: [(Square, &str); 3] = [
 ];
 
 const SLIDER_VALUES: [(Square, Bitboard, &str); 4] = [
-    (Square::A1, Bitboard(0x0000000000000000), "corner_empty"),
-    (Square::A1, Bitboard(0x3104a4008820e094), "corner_pop"),
-    (Square::E4, Bitboard(0x0000000000000000), "center_empty"),
-    (Square::E4, Bitboard(0x2c02740609802491), "center_pop")
+    (Square::A1, Bitboard::new(0x0000000000000000), "corner_empty"),
+    (Square::A1, Bitboard::new(0x3104a4008820e094), "corner_pop"),
+    (Square::E4, Bitboard::new(0x0000000000000000), "center_empty"),
+    (Square::E4, Bitboard::new(0x2c02740609802491), "center_pop")
 ];
 
 pub fn n_benches(c: &mut Criterion) {

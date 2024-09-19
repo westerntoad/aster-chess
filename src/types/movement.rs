@@ -1,4 +1,4 @@
-use super::types::square::Square;
+use super::square::Square;
 use std::fmt;
 
 const ORIG_MASK: u16 = 0b1111_1100_0000_0000;

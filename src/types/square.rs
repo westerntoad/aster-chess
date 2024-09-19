@@ -20,7 +20,6 @@ pub const NUM: usize = 64;
 #[derive(Copy, Clone, PartialEq)]
 pub struct Square(u8);
 
-#[allow(dead_code)]
 impl Square {
     pub fn new(val: u8) -> Result<Self, &'static str> {
         match val {
@@ -29,13 +28,27 @@ impl Square {
         }
     }
 
-    pub fn new_unchecked(val: u8) -> Self {
+    #[inline(always)]
+    pub const fn new_unchecked(val: u8) -> Self {
         Self(val)
     }
 
-    /// generates a square from a designated `rank` and `file` index. 0,0 is bottom-left.
+    /// generates a square from a designated `rank` and `file` index. 0,0 is a1, or bottom-left.
+    #[inline(always)]
     pub fn from_coord(rank: u8, file: u8) -> Result<Self, &'static str> {
         Self::new(rank * 8 + file)
+    }
+
+    pub fn try_offset(&self, delta_rank: i8, delta_file: i8) -> Option<Self> {
+        let rank = self.rank() as i8 + delta_rank;
+        if rank < 0 { return None; }
+        let file = self.file() as i8 + delta_file;
+        if file < 0 { return None; }
+
+        match Self::from_coord(rank as u8, file as u8) {
+            Ok(v)  => Some(v),
+            Err(_) => None
+        }
     }
 
     pub fn from_algebraic(val: &str) -> Result<Self, &'static str> {

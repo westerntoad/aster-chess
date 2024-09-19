@@ -10,11 +10,12 @@ use std::{
 use crate::types::square::Square;
 
 #[derive(Copy, Clone, PartialEq)]
-pub struct Bitboard(pub u64);
+pub struct Bitboard(u64);
 
 #[allow(dead_code)]
 impl Bitboard {
-    pub fn new(val: u64) -> Bitboard {
+    #[inline(always)]
+    pub const fn new(val: u64) -> Bitboard {
         Self(val)
     }
 
