@@ -30,6 +30,7 @@ pub fn p_move_gen(
     attacks | movement
 }
 
+#[inline(always)]
 pub fn n_move_gen(orig: Square) -> Bitboard {
     let orig = orig.bb();
     let mut horizontal = orig.east_one().east_one();

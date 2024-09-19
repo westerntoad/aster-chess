@@ -10,7 +10,7 @@ use std::{
 use crate::types::square::Square;
 
 #[derive(Copy, Clone, PartialEq)]
-pub struct Bitboard(u64);
+pub struct Bitboard(pub u64);
 
 #[allow(dead_code)]
 impl Bitboard {

@@ -1,8 +1,22 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [package]
 name = "aster"
 version = "0.1.0"
+authors = ["Abraham Engebretson"]
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "aster"
+path = "src/lib.rs"
 
-[dependencies]
+[[bin]]
+name = "aster-uci"
+path = "src/bin.rs"
+
+[[bench]]
+name = "piece_benches"
+harness = false
+
+[dev-dependencies]
+criterion = "0.5.1"
