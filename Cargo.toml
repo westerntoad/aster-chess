@@ -20,3 +20,6 @@ harness = false
 
 [dev-dependencies]
 criterion = "0.5.1"
+
+[dependencies]
+rand = "0.8.5"

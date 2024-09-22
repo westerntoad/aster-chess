@@ -1,4 +1,5 @@
 use super::square::Square;
+use super::piece::Piece;
 use std::fmt;
 
 const ORIG_MASK: u16 = 0b1111_1100_0000_0000;
@@ -44,6 +45,16 @@ impl Flag {
             0b1110 => Ok(Flag::PromoteCaptureR),
             0b1111 => Ok(Flag::PromoteCaptureQ),
             _ => Err("Invalid move flag range.")
+        }
+    }
+
+    pub fn promotion_piece(&self) -> Piece {
+        match self {
+            Flag::PromoteN | Flag::PromoteCaptureN => Piece::Knight,
+            Flag::PromoteB | Flag::PromoteCaptureB => Piece::Bishop,
+            Flag::PromoteR | Flag::PromoteCaptureR => Piece::Rook,
+            Flag::PromoteQ | Flag::PromoteCaptureQ => Piece::Queen,
+            _ => Piece::NoPiece
         }
     }
 }
@@ -102,6 +113,10 @@ impl Move {
             None
         }
     }
+
+    pub fn promotion_piece(&self) -> Piece {
+        self.flag().promotion_piece()
+    }
 }
 
 impl fmt::Debug for Move {
@@ -112,10 +127,24 @@ impl fmt::Debug for Move {
 
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Move({} to {}, {:?})",
+        /*write!(f, "Move({} to {}, {:?})",
             self.orig(),
             self.targ(),
             self.flag()
+        )*/
+
+        let promote_char = match self.promotion_piece() {
+            Piece::Knight => "n",
+            Piece::Bishop => "b",
+            Piece::Rook   => "r",
+            Piece::Queen  => "q",
+            _ => ""
+        };
+
+        write!(f, "{}{}{}",
+            self.orig(),
+            self.targ(),
+            promote_char
         )
     }
 }

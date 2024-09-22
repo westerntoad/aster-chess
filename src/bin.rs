@@ -55,7 +55,7 @@ fn explore_at_depth(mut board: Board, mut depth: u32) {
 }
 
 fn start() {
-    let bot = Bot::new();
+    let mut bot = Bot::new();
     let mut buffer = String::new();
 
     loop {
