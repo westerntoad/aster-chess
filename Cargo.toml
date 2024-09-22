@@ -3,7 +3,7 @@
 [package]
 name = "aster"
 version = "0.1.0"
-authors = ["Abraham Engebretson"]
+authors = ["Abraham Engebretson <me@abecodes.dev>"]
 edition = "2021"
 
 [lib]
