@@ -60,8 +60,14 @@ impl Flag {
 }
 
 impl Move {
+    // TODO remove
     pub const SHORT_CASTLE: Self = Self(0b0010);
-    pub const LONG_CASTLE: Self = Self(0b0011);
+    pub const LONG_CASTLE:  Self = Self(0b0011);
+
+    pub const WHITE_SHORT_CASTLE: Self = Self(0x1062);
+    pub const WHITE_LONG_CASTLE:  Self = Self(0x1023);
+    pub const BLACK_SHORT_CASTLE: Self = Self(0xf3e2);
+    pub const BLACK_LONG_CASTLE:  Self = Self(0xf3a3);
 
     pub fn new(orig: Square, targ: Square, flag: Flag) -> Self {
         let mut output = (orig.val() as u16) << 10;
@@ -141,10 +147,11 @@ impl fmt::Display for Move {
             _ => ""
         };
 
-        write!(f, "{}{}{}",
+        write!(f, "{}{}{} {:?}",
             self.orig(),
             self.targ(),
-            promote_char
+            promote_char,
+            self.flag()
         )
     }
 }

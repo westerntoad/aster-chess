@@ -8,6 +8,14 @@ pub struct Bot {
     board: Board
 }
 
+fn print_legal_moves(board: &Board) {
+    let legal_moves = board.clone().legal_moves();
+    for (i, action) in legal_moves.iter().enumerate() {
+        println!("{: <6}{}", i+1, action);
+    }
+}
+
+
 impl Bot {
     const NAME:     &'static str = env!("CARGO_PKG_NAME");
     const VERSION:  &'static str = env!("CARGO_PKG_VERSION");
@@ -33,6 +41,10 @@ impl Bot {
                 //None
                 Some(self.random_move())
             }
+            "position" => {
+                self.position(command_iter);
+                None
+            },
             _ => None
         }
     }
@@ -49,12 +61,13 @@ impl Bot {
             output.push_str(author);
             output.push('\n');
         }
+        output.push('\n');
         output.push_str(Self::UCI_OK);
 
         output
     }
 
-    fn go(&self, mut commands_iter: SplitWhitespace) {
+    fn go(&self, mut command_iter: SplitWhitespace) {
         let mut wtime: Option<Duration> = None;
         let mut btime: Option<Duration> = None;
 
@@ -71,11 +84,29 @@ impl Bot {
 
         };
 
-        while let Some(command) = commands_iter.next() {
+        while let Some(command) = command_iter.next() {
             match command {
-                "wtime" => wtime = parse_time(commands_iter.next()),
-                "btime" => btime = parse_time(commands_iter.next()),
+                "wtime" => wtime = parse_time(command_iter.next()),
+                "btime" => btime = parse_time(command_iter.next()),
                 _ => ()
+            }
+        }
+    }
+
+    fn position(&mut self, mut command_iter: SplitWhitespace) {
+        // position that isn't working as intended:
+        // position startpos moves e2e4 d7d5 e4d5 h7h6 f1b5 c7c6 d5c6 d8d5 b1c3 c8f5 c3d5 g7g5 c6b7
+        if let Some(pos_arg) = command_iter.next() {
+            self.board = Board::from_fen(pos_arg.trim())
+                .unwrap_or(Board::STARTING_POSITION);
+        }
+
+        if command_iter.next() == Some("moves") {
+            for action_str in command_iter {
+                let action = self.board.get_move_from_algebraic(action_str).expect("TODO: better error handling");
+                self.board.make_move(&action);
+                println!("{}\n{action}\n\nis_in_check = {}", self.board, self.board.clone().in_check());
+                print_legal_moves(&self.board);
             }
         }
     }
@@ -85,6 +116,8 @@ impl Bot {
         let action = moves
             .choose(&mut rand::thread_rng())
             .expect("No legal move found.");
+
+        self.board.make_move(action);
 
         format!("bestmove {}", action)
     }

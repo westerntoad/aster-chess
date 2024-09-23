@@ -68,9 +68,7 @@ impl Board {
         },
         total_ply: 0
     };
-
     
-
     fn pawn_moves(&self) -> Vec<Move> {
         let mut moves: Vec<Move> = Vec::new();
         let friend = self.color_bb[!(self.white_to_move) as usize];
@@ -473,6 +471,59 @@ impl Board {
         }
 
         nodes
+    }
+
+    pub fn get_move_from_algebraic(&self, source_str: &str) -> Result<Move, &'static str> {
+        assert!(source_str.len() == 4 || source_str.len() == 5);
+        let orig_sq = Square::from_algebraic(&source_str[0..2])?;
+        let dest_sq = Square::from_algebraic(&source_str[2..4])?;
+        let flag = {
+            let orig_is_white = !(orig_sq.bb() & self.color_bb[WHITE_IDX]).is_empty();
+            let is_capture = !(dest_sq.bb() & self.color_bb[orig_is_white as usize]).is_empty();
+            let orig_piece = self.find_piece(orig_sq.bb());
+
+            if orig_piece == Piece::Pawn && Some(dest_sq) == self.ep_target() {
+                Flag::EnPassant
+            } else if source_str.len() == 5 {
+                let capture_char = source_str.chars().last().expect("nvalid source string size.");
+
+                if is_capture {
+                    match capture_char {
+                        'n' => Flag::PromoteCaptureN,
+                        'b' => Flag::PromoteCaptureB,
+                        'r' => Flag::PromoteCaptureR,
+                        'q' => Flag::PromoteCaptureQ,
+                        _ => panic!()
+                    }
+                } else {
+                    match capture_char {
+                        'n' => Flag::PromoteN,
+                        'b' => Flag::PromoteB,
+                        'r' => Flag::PromoteR,
+                        'q' => Flag::PromoteQ,
+                        _ => panic!()
+                    }
+                }
+            } else if orig_piece == Piece::Pawn
+                        && (orig_sq.rank() == Square::RANK_2 || orig_sq.rank() == Square::RANK_7) {
+
+                Flag::DoublePush
+            } else if orig_piece == Piece::King && orig_sq.file() == Square::E_FILE
+                        && (dest_sq.file() == Square::G_FILE || dest_sq.file() == Square::C_FILE) {
+
+                if dest_sq.file() == Square::G_FILE {
+                    Flag::ShortCastle
+                } else {
+                    Flag::LongCastle
+                }
+            } else if is_capture {
+                Flag::Capture
+            } else {
+                Flag::Quiet
+            }
+        };
+
+        Ok(Move::new(orig_sq, dest_sq, flag))
     }
 
     fn perft_helper(

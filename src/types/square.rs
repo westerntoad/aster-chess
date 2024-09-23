@@ -190,6 +190,24 @@ impl Square {
     pub const F8: Square = Self(61);
     pub const G8: Square = Self(62);
     pub const H8: Square = Self(63);
+
+    pub const A_FILE: u8 = 0;
+    pub const B_FILE: u8 = 1;
+    pub const C_FILE: u8 = 2;
+    pub const D_FILE: u8 = 3;
+    pub const E_FILE: u8 = 4;
+    pub const F_FILE: u8 = 5;
+    pub const G_FILE: u8 = 6;
+    pub const H_FILE: u8 = 7;
+
+    pub const RANK_1: u8 = 0;
+    pub const RANK_2: u8 = 1;
+    pub const RANK_3: u8 = 2;
+    pub const RANK_4: u8 = 3;
+    pub const RANK_5: u8 = 4;
+    pub const RANK_6: u8 = 5;
+    pub const RANK_7: u8 = 6;
+    pub const RANK_8: u8 = 7;
 }
 
 
